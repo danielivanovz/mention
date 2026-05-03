@@ -1,0 +1,24 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "_comment": "Browser-mode mutation testing for `src/text/caret.ts`. Pixel-math mutants are unobservable under happy-dom (every layout read is 0), so the main `stryker.config.json` caps caret at ~26.67%. This config drives Stryker against `vitest.browser.config.ts`, which mounts each test in real chromium via @vitest/browser — layout reads return real numbers and the caret pixel-pinned tests in `src/text/caret.browser.test.ts` kill the mutants the happy-dom suite couldn't see. Concurrency is lower (browser tests are heavier than node ones), and reports go to a separate `reports/mutation-browser/` so this run doesn't overwrite the main report. The `plugins: [\"@stryker-mutator/vitest-runner\"]` workaround for bun's content-addressable hoisting is the same as the main config — see its `_comment` for the rationale. Thresholds are lower than the main config because chromium-only testing leaves a structurally large equivalent-mutant population: the `isFirefox()` branch is dead code in chromium (~7 mutants), the SSR guard always sees `document` (~3 mutants), and the `|| \".\"` defensive fallback produces identical `span.offsetLeft` whether the span is empty, full-value, or a literal — span content has no effect on its own offsetLeft (~5 mutants). Headline score after this work: 31.11% (up from happy-dom's 26.67%). Effective score against killable mutants: ~60%. The pixel-arithmetic mutants this spike targeted (borderTopWidth + → -, borderLeft swap with borderTop, parseInt drops) are all killed.",
+  "plugins": ["@stryker-mutator/vitest-runner"],
+  "testRunner": "vitest",
+  "vitest": {
+    "configFile": "vitest.browser.config.ts"
+  },
+  "coverageAnalysis": "off",
+  "mutate": ["src/text/caret.ts"],
+  "reporters": ["progress", "clear-text", "html"],
+  "htmlReporter": {
+    "fileName": "reports/mutation-browser/index.html"
+  },
+  "thresholds": {
+    "high": 60,
+    "low": 30,
+    "break": 25
+  },
+  "timeoutMS": 120000,
+  "concurrency": 2,
+  "tempDirName": ".stryker-tmp-browser",
+  "cleanTempDir": true
+}

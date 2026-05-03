@@ -1,0 +1,103 @@
+---
+title: Accessibility
+description: The combobox-as-substring contract, AT compatibility matrix, and documented axe exceptions.
+---
+
+`@danielivanovz/mention` ships the WAI-ARIA combobox-as-substring contract end-to-end: the textarea keeps DOM focus at all times, and the popover is a virtual listbox the textarea points at via `aria-controls` and `aria-activedescendant`. This is the same pattern Slack, Linear, GitHub, and Notion ship — what changes here is that you don't have to wire it yourself.
+
+## The contract
+
+The textarea always carries:
+
+| Attribute | Value | Notes |
+|---|---|---|
+| `role` | `"combobox"` | Persistent (not toggled when the popover opens). |
+| `aria-controls` | id of the listbox | Set on mount; never null. |
+| `aria-haspopup` | `"listbox"` | The popup type. |
+| `aria-autocomplete` | `"list"` | We narrow as the user types but never autoinsert. |
+| `aria-expanded` | `"true"` / `"false"` | Reflects popover open state. |
+| `aria-activedescendant` | id of the highlighted option, or unset | Updated on every Arrow key / pointer move. |
+
+The popover (when open) carries:
+
+| Attribute | Value | Notes |
+|---|---|---|
+| `role` | `"listbox"` | The virtual listbox the textarea points at. |
+| `aria-label` or `aria-labelledby` | string / id | Required by APG; pass on `<Mention.Popover>`. |
+
+Each option carries:
+
+| Attribute | Value | Notes |
+|---|---|---|
+| `role` | `"option"` | Standard listbox child role. |
+| `id` | unique per item | Referenced by `aria-activedescendant`. |
+| `aria-selected` | `"true"` / `"false"` | Set on the highlighted option. |
+
+## Keyboard
+
+| Key | Behaviour |
+|---|---|
+| Type `@` (or your `trigger`) at a word boundary | Open popover with empty query. |
+| Continue typing | Update query (filter / fetch); highlight the first option. |
+| ArrowDown | Move highlight to next option (wraps to first). |
+| ArrowUp | Move highlight to previous option (wraps to last). |
+| Enter | Commit the highlighted option; close popover. |
+| Tab | Same as Enter (configurable via `commitOnTab` — v0.2). |
+| Escape | Close popover; preserve typed text. |
+| Click an option | Commit; focus stays in textarea. |
+
+Focus never leaves the textarea — that's the entire point of the substring contract.
+
+## AT compatibility matrix
+
+The contract is validated end-to-end via Playwright + axe. Manual AT smoke runs are gated for major releases.
+
+| AT | Browser | OS | Status |
+|---|---|---|---|
+| NVDA | Firefox | Windows 11 | Pending v0.2 release smoke |
+| NVDA | Chrome | Windows 11 | Pending v0.2 release smoke |
+| JAWS | Chrome | Windows 11 | Pending v0.2 release smoke |
+| VoiceOver | Safari | macOS 15 | Pending v0.2 release smoke |
+| VoiceOver | Chrome | macOS 15 | Pending v0.2 release smoke |
+| TalkBack | Chrome | Android 15 | Pending v0.2 release smoke |
+
+The contract is mechanically correct (Playwright covers each ARIA attribute transition) — the matrix tracks human verification of *announcement quality* (does the AT say a useful thing when the highlight moves? does it announce the popover open / close?). v0.1 ships with the mechanical contract validated; the matrix populates after the first round of manual smoke.
+
+### IME smoke rig
+
+IME safety (Japanese, Chinese Pinyin, Android Gboard) has its own dedicated rig — IME composition is validated at the `compositionstart` / `compositionend` boundary by 3 RTL tests + 1 chromium e2e contract test driving synthetic `CompositionEvent`s, and live-stack validation across **macOS Japanese**, **Windows Pinyin**, and **Android Gboard** runs through the manual rig at `packages/react/manual-at/ime/`. Each cell asserts three invariants: composition-start does not commit, candidate selection updates the live region without dismissing the popover, and space-commit during composition does not race past the trigger.
+
+To reproduce locally, run `bun run e2e:dev` from `packages/react/` and open `http://localhost:5175/?ime=1` — the harness swaps in a Latin+CJK dataset so candidate-window selection lands on observably-different items per IME. Per-cell setup, reproduction, and result-recording instructions are in the rig's README.
+
+## Documented axe exceptions
+
+axe's automated rules are stricter than the WAI-ARIA APG in two specific cases. Both are documented exceptions, not bugs, and the underlying contract is correct:
+
+### `aria-allowed-role` on `<textarea role="combobox">`
+
+HTML-ARIA forbids `role="combobox"` on `<textarea>`; ARIA 1.2 explicitly permits it. The combobox-as-substring pattern requires the role to be persistent and on the actual editable host — anything else breaks NVDA on Firefox, where dynamic role mutation desyncs the AT's accessibility tree.
+
+The pattern ships in production at every major mention surface (GitHub PR comments, Slack messages, Linear issues, Notion blocks). Suppress the violation in your axe config for the `<Mention.Input>`:
+
+```js
+// playwright + @axe-core/playwright
+const results = await new AxeBuilder({ page })
+  .disableRules(["aria-allowed-role"])
+  .analyze();
+```
+
+### `region` on portaled listboxes
+
+Best-practice rule that portaled popovers can't satisfy — a `<ul role="listbox">` rendered into `document.body` lives outside any landmark. AT navigation reaches it through `aria-controls` and `aria-activedescendant`, not landmark jumps, so the rule's premise doesn't apply.
+
+If you're running axe in CI, suppress it for the popover container or run with `disableRules(["region"])`.
+
+## Reduced motion
+
+The library's only motion is the popover entrance / exit (≤ 200ms transform + opacity, compositor-safe). It respects `prefers-reduced-motion: reduce` automatically — when the media query matches, the transform is dropped and only the opacity fade remains, preserving an orientation cue without distracting motion.
+
+If you've passed `unstyled`, the entrance is yours to design — match the same posture (≤ 200ms, transform/opacity only, reduced-motion fallback that keeps the fade) for parity.
+
+## High-contrast mode
+
+The default styles use `currentColor` borders and `forced-color-adjust: auto` so Windows High Contrast / forced-colors mode renders correctly without overrides. If you've fully customised the styling, mirror this — let the OS palette through rather than locking colours.

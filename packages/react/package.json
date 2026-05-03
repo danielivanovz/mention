@@ -1,0 +1,115 @@
+{
+  "name": "@danielivanov/mention",
+  "version": "0.1.0",
+  "description": "Headless, a11y-first React mention (@-trigger autocomplete) primitive for textareas and contenteditable. Multi-trigger, atomic chips, shadcn-friendly. ~14 kB gzip.",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "default": "./dist/index.js"
+    },
+    "./styles.css": "./dist/styles.css",
+    "./registry.json": "./dist/registry.json"
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "sideEffects": [
+    "*.css"
+  ],
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "dev": "bunchee --watch",
+    "build": "node scripts/build.mjs",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:unit": "vitest run",
+    "test:unit:watch": "vitest",
+    "test:unit:cov": "vitest run --coverage",
+    "test:smoke": "vitest run",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed --project=chromium",
+    "test:e2e:debug": "playwright test --debug --project=chromium",
+    "test:e2e:ui": "playwright test --ui",
+    "e2e:dev": "vite --config e2e/harness/vite.config.ts",
+    "size": "size-limit",
+    "test:browser": "vitest run --config vitest.browser.config.ts",
+    "test:mutation": "stryker run",
+    "test:mutation:browser": "stryker run stryker.browser.config.json",
+    "lint": "biome check",
+    "format": "biome format --write"
+  },
+  "keywords": [
+    "react",
+    "mention",
+    "mentions",
+    "autocomplete",
+    "combobox",
+    "textarea",
+    "accessibility",
+    "a11y",
+    "shadcn",
+    "headless"
+  ],
+  "author": "Daniel Ivanov <heyivanov@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danielivanovz/mention.git"
+  },
+  "bugs": {
+    "url": "https://github.com/danielivanovz/mention/issues"
+  },
+  "dependencies": {
+    "@floating-ui/react-dom": "^2.1.0"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.10.0",
+    "@biomejs/biome": "^2.2.0",
+    "@playwright/test": "^1.49.0",
+    "@size-limit/preset-small-lib": "^11.1.6",
+    "@stryker-mutator/core": "^9.6.1",
+    "@stryker-mutator/vitest-runner": "^9.6.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "@vitest/browser": "^4.1.5",
+    "@vitest/browser-playwright": "^4.1.5",
+    "bunchee": "^6.3.3",
+    "fast-check": "^4.7.0",
+    "happy-dom": "^20.9.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "size-limit": "^11.1.6",
+    "typescript": "^5.6.3",
+    "vite": "^6.0.0",
+    "vitest": "^4.1.5",
+    "vitest-axe": "^0.1.0"
+  },
+  "size-limit": [
+    {
+      "name": "@danielivanov/mention (ESM, gzip)",
+      "path": "dist/index.mjs",
+      "limit": "14 kB",
+      "gzip": true
+    }
+  ]
+}

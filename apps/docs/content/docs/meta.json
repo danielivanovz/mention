@@ -1,0 +1,14 @@
+{
+  "title": "Docs",
+  "pages": [
+    "index",
+    "api-reference",
+    "---Recipes---",
+    "recipes",
+    "---Integrations---",
+    "integrations",
+    "---Reference---",
+    "accessibility",
+    "troubleshooting"
+  ]
+}

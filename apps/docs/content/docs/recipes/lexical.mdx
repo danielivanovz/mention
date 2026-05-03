@@ -1,0 +1,150 @@
+---
+title: Lexical
+description: EditorAdapter implementation for Meta's Lexical editor framework. Substring + atomic-chip arms.
+---
+
+[Lexical](https://lexical.dev/) exposes its document tree as `LexicalNode`s and its selection as `RangeSelection` with anchor/focus pointing to specific nodes. The adapter maps Lexical's structured selection to the library's flat character-offset model via `$getRoot().getTextContent()`.
+
+> Install: `npm install lexical @lexical/react`. The mention library has no Lexical dependency — this adapter lives in your app code.
+
+## Adapter
+
+```tsx
+// adapters/lexical.ts
+import type { EditorAdapter, MentionInsertResult, ChipInsertInput } from "@danielivanovz/mention";
+import type { LexicalEditor } from "lexical";
+import { $getRoot, $getSelection, $isRangeSelection, $createTextNode } from "lexical";
+import { $createMentionNode } from "./mention-node"; // a DecoratorNode subclass — see below
+
+export function createLexicalAdapter(editor: LexicalEditor): EditorAdapter {
+  const rootEl = editor.getRootElement();
+  if (rootEl === null) throw new Error("Lexical root element not mounted");
+
+  return {
+    element: rootEl,
+    getValue: () => editor.getEditorState().read(() => $getRoot().getTextContent()),
+    getCaretOffset: () =>
+      editor.getEditorState().read(() => {
+        const sel = $getSelection();
+        if (!$isRangeSelection(sel)) return 0;
+        // Walk from root, summing textContent up to the anchor node + offset.
+        let offset = 0;
+        const root = $getRoot();
+        const target = sel.anchor.getNode();
+        for (const node of root.getAllTextNodes()) {
+          if (node === target) return offset + sel.anchor.offset;
+          offset += node.getTextContentSize();
+        }
+        return offset;
+      }),
+    getCaretRect: () => {
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0) return null;
+      const range = sel.getRangeAt(0).cloneRange();
+      range.collapse(true);
+      return range.getBoundingClientRect();
+    },
+    applyInsert: (result: MentionInsertResult) => {
+      // Substring-shape: replace the entire root text content. For a
+      // production adapter you'd splice just the [triggerOffset, caret)
+      // window — Lexical's $insertNodes is the surgical tool — but
+      // replaceAll is the simplest correct implementation.
+      editor.update(() => {
+        const root = $getRoot();
+        root.clear();
+        root.append($createTextNode(result.value));
+      });
+    },
+    applyChipInsert: (input: ChipInsertInput) => {
+      // shape:"node" — insert a DecoratorNode at the splice site.
+      editor.update(() => {
+        const sel = $getSelection();
+        if (!$isRangeSelection(sel)) return;
+        // Splice the trigger window. In a real implementation, derive the
+        // Lexical-native range from the library's char offsets and call
+        // $insertNodes with the chip wrapper.
+        const chipNode = $createMentionNode(input.chip);
+        sel.insertNodes([chipNode]);
+      });
+    },
+    focus: () => editor.focus(),
+  };
+}
+```
+
+## DecoratorNode for chips
+
+```tsx
+// adapters/mention-node.tsx
+import { DecoratorNode } from "lexical";
+import { createPortal } from "react-dom";
+
+export class MentionNode extends DecoratorNode<JSX.Element> {
+  __placeholder: HTMLElement;
+
+  constructor(placeholder: HTMLElement, key?: string) {
+    super(key);
+    this.__placeholder = placeholder;
+  }
+
+  static getType(): string { return "mention"; }
+  static clone(node: MentionNode): MentionNode {
+    return new MentionNode(node.__placeholder, node.__key);
+  }
+  createDOM(): HTMLElement { return this.__placeholder; }
+  updateDOM(): false { return false; }
+  isInline(): true { return true; }
+
+  decorate(): JSX.Element {
+    // Mention.Chips will portal into __placeholder; nothing to render here.
+    return <span />;
+  }
+}
+
+export function $createMentionNode(placeholder: HTMLElement): MentionNode {
+  return new MentionNode(placeholder);
+}
+```
+
+## Wiring
+
+```tsx
+import { LexicalComposer } from "@lexical/react/LexicalComposer";
+import { ContentEditable } from "@lexical/react/LexicalContentEditable";
+import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
+import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
+import { useEffect } from "react";
+import { Mention, useMentionContext } from "@danielivanovz/mention";
+import { createLexicalAdapter } from "./adapters/lexical";
+import { MentionNode } from "./adapters/mention-node";
+
+function MentionBridge() {
+  const [editor] = useLexicalComposerContext();
+  const ctx = useMentionContext(); // escape-hatch context access
+  useEffect(() => {
+    ctx.adapterRef.current = createLexicalAdapter(editor);
+    return () => { ctx.adapterRef.current = null; };
+  }, [editor, ctx.adapterRef]);
+  return null;
+}
+
+export function MyEditor() {
+  return (
+    <LexicalComposer initialConfig={{ namespace: "demo", nodes: [MentionNode], onError: console.error }}>
+      <Mention.Root items={users} getKey={(u) => u.id} getLabel={(u) => u.name} onSelect={() => {}}>
+        <RichTextPlugin contentEditable={<ContentEditable />} placeholder={null} ErrorBoundary={LexicalErrorBoundary} />
+        <MentionBridge />
+        <Mention.Popover>
+          <Mention.List>{(u) => <Mention.Item value={u}>{u.name}</Mention.Item>}</Mention.List>
+        </Mention.Popover>
+      </Mention.Root>
+    </LexicalComposer>
+  );
+}
+```
+
+## Caveats
+
+- The substring `applyInsert` shown above does a `root.clear() + append` — fine for prototypes, lossy for real documents. A production adapter should splice only `[triggerOffset, selectionStart)` using Lexical's `RangeSelection.insertText` after positioning the selection.
+- Lexical's selection model is asynchronous — `editor.update(() => …)` queues mutations. For mention insertion that's fine (the next render reflects the change), but if you need synchronous read-after-write, use `editor.getEditorState().read()`.
+- Chip elements live as `DecoratorNode`s; Lexical handles serialization, undo, and copy-paste atomically once the node type is registered.

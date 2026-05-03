@@ -1,0 +1,198 @@
+---
+title: API Reference
+description: Props, types, and escape-hatch hook for @danielivanovz/mention. Source-of-truth is packages/react/src/types.ts.
+---
+
+The compound API (`Mention.Root` + sub-components) is the 80% case. `useMention<TItem>()` is the escape hatch when you need to drive the ARIA contract yourself.
+
+## `<Mention.Root>`
+
+Wraps an `<Input>` + `<Popover>` and orchestrates the state machine. Generic over your item type `TItem`.
+
+| Prop | Type | Default | Notes |
+|---|---|---|---|
+| `items` | `readonly TItem[] \| (query: string, signal: AbortSignal) => Promise<readonly TItem[]>` | required | Sync array or async fetcher. The fetcher receives an `AbortSignal` — wire it to `fetch` for free cancellation on rekey. |
+| `getKey` | `(item: TItem) => string \| number` | required | Stable, distinct per item. Used as React `key` and for memoisation. |
+| `getLabel` | `(item: TItem) => string` | required | Human-readable label; default insertion text is `` `${trigger}${getLabel(item)}` `` plus a trailing space. |
+| `onSelect` | `(item: TItem, meta: MentionSelectMeta) => void` | required | Notifier — fires on Enter / Tab / click. Doesn't control insertion (use `getInsertText`). |
+| `trigger` | `string` | `"@"` | Trigger character — single char. `"@"` for mentions, `"/"` for slash-commands, `"#"` for channels, `":"` for emoji shortcodes. Mid-word triggers (e.g. `foo@bar`, `/docs/api`) are suppressed by the isolation rule. For more than one trigger character in the same editor, see the [multi-trigger overload](#mentionroot--multi-trigger). |
+| `getInsertText` | `(item: TItem, meta: MentionSelectMeta) => string` | `` `${trigger}${getLabel(item)}` `` | Override the inserted text. Useful for markdown links or chip syntax. |
+| `debounceMs` | `number` | `150` | Async-fetcher debounce. Pass `0` to disable. |
+| `unstyled` | `boolean` | `false` | Skip default popover CSS. Bring your own design system. |
+| `handleRef` | `RefObject<MentionImperativeHandle<TItem> \| null>` | — | Imperative handle — `open`, `close`, `commit`, `textarea`. |
+| `children` | `ReactNode` | required | Compose `<Mention.Input>` + `<Mention.Popover>` inside. |
+
+**`MentionSelectMeta`** — passed to `onSelect` and `getInsertText`:
+
+| Field | Type | Notes |
+|---|---|---|
+| `trigger` | `string` | Trigger character that opened the menu. |
+| `query` | `string` | Substring the user typed between `@` and the caret. |
+| `triggerOffset` | `number` | Caret offset where the trigger sits. |
+
+## `<Mention.Root>` — multi-trigger
+
+`<Mention.Root>` is overloaded. The single-trigger props above are one form; the multi-trigger form below lets one editor host arbitrary trigger characters with independent per-channel config. Pick the form that matches your data: pass `triggers` to take this path, otherwise pass `items` for single-trigger.
+
+```ts
+function Root<TItemMap extends Record<string, unknown>>(
+  props: MentionRootMultiProps<TItemMap>,
+): React.ReactNode;
+```
+
+| Prop | Type | Default | Notes |
+|---|---|---|---|
+| `triggers` | `{ [K in keyof TItemMap]: MentionChannelConfig<TItemMap[K]> }` | required | Per-channel config keyed by trigger char. Keys are *your* trigger chars (any single character). Values carry `items`, `getKey`, `getLabel`, optional `getInsertText`. |
+| `onSelect` | `(payload: { [K in keyof TItemMap]: { [P in K]: TItemMap[K] } }[keyof TItemMap], meta) => void` | required | Discriminated-union payload — narrow with `'@' in payload` (or whatever key you used). |
+| `debounceMs` | `number` | `150` | Async-fetcher debounce, shared across channels. |
+| `unstyled` | `boolean` | `false` | Skip default popover CSS. |
+| `handleRef` | `RefObject<MentionImperativeHandle<TItemMap[keyof TItemMap]> \| null>` | — | Imperative handle. The `commit(item)` method accepts an item from any channel. |
+| `children` | `ReactNode` | required | Compose `<Mention.Input>` + `<Mention.Popover>` inside. |
+
+**`MentionChannelConfig<TItem>`** — one entry per trigger char in `triggers`:
+
+| Field | Type | Default | Notes |
+|---|---|---|---|
+| `items` | `readonly TItem[] \| (query, signal) => Promise<readonly TItem[]>` | required | Sync or async, same shape as the single-trigger form. |
+| `getKey` | `(item: TItem) => string \| number` | required | Stable key per item. |
+| `getLabel` | `(item: TItem) => string` | required | Human-readable label. |
+| `getInsertText` | `(item: TItem, meta) => string` | `` `${trigger}${getLabel(item)}` `` | Override the inserted text per channel. |
+
+The full recipe with worked examples (slash commands, mentions, emoji shortcodes in one editor) is in [recipes/multi-trigger](recipes/multi-trigger).
+
+## `<Mention.Input>`
+
+Forwards to the underlying `<textarea>`. Accepts every standard `TextareaHTMLAttributes` prop except the ones the library owns (the ARIA contract) or composes (`onChange`, `onKeyDown`).
+
+| Prop | Type | Notes |
+|---|---|---|
+| `ref` | `Ref<HTMLTextAreaElement>` | Forwarded to the textarea. Useful for focus management. |
+
+The library wires (don't override): `role="combobox"`, `aria-controls`, `aria-expanded`, `aria-haspopup`, `aria-autocomplete="list"`, `aria-activedescendant`, plus key handlers for Arrow keys / Enter / Tab / Escape / trigger detection.
+
+## `<Mention.Popover>`
+
+Container for the listbox + Empty + Loading branches. Portals to `document.body` by default.
+
+| Prop | Type | Default | Notes |
+|---|---|---|---|
+| `container` | `HTMLElement \| null` | `document.body` | Portal target. Pass `null` to render in-place — useful when TalkBack swipe order breaks with portals. |
+| `maxHeight` | `number` | `280` | Max popover height in px before it scrolls. |
+| `aria-label` | `string` | — | Accessible name for the listbox. APG requires either this or `aria-labelledby`. |
+| `aria-labelledby` | `string` | — | Id of a visible label element. |
+| `children` | `ReactNode` | required | Typically `<Mention.List>` + `<Mention.Empty>` + `<Mention.Loading>`. |
+
+## `<Mention.List<TItem>>`
+
+Render-prop body. The function is called per item with `(item, index)`.
+
+```tsx
+<Mention.List>
+  {(user) => <Mention.Item value={user}>{user.name}</Mention.Item>}
+</Mention.List>
+```
+
+| Prop | Type | Default | Notes |
+|---|---|---|---|
+| `trigger` | `string` | — | Multi-trigger only. When set, this list only renders while the popover's active trigger character matches. Lets you compose multiple type-safe lists, one per channel: `<Mention.List<Command> trigger="/">{(cmd) => …}</Mention.List>`. Omit for single-trigger. |
+| `children` | `(item: TItem, index: number) => ReactNode` | required | Render-prop. Must return a `<Mention.Item>`. |
+
+`<Mention.List>` applies React keys via `getKey(item)` automatically — escape-hatch consumers using `getItemProps` directly must pass `key={getKey(item)}` themselves (React 19 strict-mode warns on key-via-spread, so it's intentionally not in `getItemProps`).
+
+## `<Mention.Item>`
+
+| Prop | Type | Notes |
+|---|---|---|
+| `value` | `TItem` | Required. The item this option represents. |
+| `children` | `ReactNode` | Visual content — typically the label, optionally with avatar / metadata. |
+
+## `<Mention.Empty>` / `<Mention.Loading>`
+
+Each accepts `children: ReactNode`. `<Mention.Empty>` renders when the filtered/fetched list is empty; `<Mention.Loading>` renders while an async fetcher is pending.
+
+## `MentionImperativeHandle<TItem>`
+
+Returned via `handleRef`:
+
+| Method | Notes |
+|---|---|
+| `open()` | Open the popover programmatically. |
+| `close()` | Close the popover programmatically. |
+| `commit(item)` | Same effect as the user pressing Enter on `item`. |
+| `textarea` | Direct access for focus management. |
+
+## `useMention<TItem>(props)` — escape hatch
+
+When the compound API doesn't fit (custom layouts, non-listbox UI, splitting input + popover across the tree), drive the ARIA contract yourself.
+
+**Props.** Same shape as `MentionRootProps`, plus:
+
+| Prop | Type | Notes |
+|---|---|---|
+| `value` | `string` | Optional controlled textarea value. |
+| `onValueChange` | `(value: string) => void` | Fires on every change — both user input and committed selections. |
+
+**Returns** (`MentionContext<TItem>`):
+
+| Field | Type | Notes |
+|---|---|---|
+| `query` | `string` | Substring after the trigger up to the caret. |
+| `open` | `boolean` | Whether the popover is open. |
+| `highlightedIndex` | `number` | -1 if none. |
+| `items` | `readonly TItem[]` | Filtered / fetched items currently displayed. |
+| `status` | `"idle" \| "loading" \| "error" \| "success"` | For loading / error UI. |
+| `getInputProps()` | `Record<string, unknown>` | Spread on the textarea. |
+| `getPopoverProps()` | `Record<string, unknown>` | Spread on the popover container. |
+| `getItemProps(item, index)` | `Record<string, unknown>` | Spread on each option. **Does not include `key`** — pass it explicitly. |
+| `setOpen(open)` | `(open: boolean) => void` | Imperative open/close. |
+| `commit(item)` | `(item: TItem) => void` | Imperative commit. |
+
+See [Recipes → Custom rendering](/docs/recipes/custom-rendering) for an end-to-end example.
+
+## `useMentionMulti<TItemMap>(props)` — multi-trigger escape hatch
+
+The typed multi-trigger counterpart to `useMention<TItem>()`. Use when you want multi-channel routing (e.g., `/` for commands + `@` for people) without the compound API — command palettes, inline suggestions, fully custom popovers.
+
+**Props.** Same shape as `MentionRootMultiProps`, plus the controlled-input fields the hook surfaces for headless integration:
+
+| Prop | Type | Notes |
+|---|---|---|
+| `triggers` | `{ [K in keyof TItemMap]: MentionChannelConfig<TItemMap[K]> }` | Per-channel config keyed by trigger character. |
+| `onSelect` | `(payload, meta) => void` | Discriminated-union payload `{ [activeTrigger]: TItemMap[activeTrigger] }`. |
+| `debounceMs` | `number` | Async-fetcher debounce, shared across channels. |
+| `value` | `string` | Optional controlled textarea value. |
+| `onValueChange` | `(value: string) => void` | Fires on every change. |
+
+**Returns** (`MentionMultiContext<TItemMap>`):
+
+| Field | Type | Notes |
+|---|---|---|
+| `activeTrigger` | `keyof TItemMap \| null` | Which trigger character opened the popover. `null` when closed. Use to narrow `items` / `commit` per channel. |
+| `items` | `readonly TItemMap[keyof TItemMap][]` | Items from the active channel only. Cast to the appropriate type after narrowing on `activeTrigger`. |
+| `query`, `open`, `highlightedIndex`, `status`, `getInputProps()`, `getPopoverProps()`, `getItemProps()`, `setOpen()`, `commit()` | — | Same as `useMention`. |
+
+See [Recipes → Multi-trigger](/docs/recipes/multi-trigger) for a worked command-palette example.
+
+## `findActiveMention(value, caret, trigger)` — low-level utility
+
+The dispatcher's backwards-scan helper, exposed for hand-rolled dispatchers and headless integrations that don't use any of the hooks or the compound API. Same isolation rules + Unicode word-boundary handling that the rest of the library uses.
+
+```ts
+import { findActiveMention, type ActiveMention } from "@danielivanovz/mention";
+
+const result: ActiveMention | null = findActiveMention(
+  textarea.value,
+  textarea.selectionStart,
+  ["/", "@", ":"],   // string | readonly string[]
+);
+// → { trigger: "@", query: "ali" }   if matched
+// → null                              if not
+```
+
+| Param | Type | Notes |
+|---|---|---|
+| `value` | `string` | The textarea (or contenteditable) text content. |
+| `caret` | `number` | Caret offset. |
+| `trigger` | `string \| readonly string[]` | Single char or array. Default `"@"`. |
+
+**Returns** `{ trigger: string; query: string } \| null`. `trigger` reports which configured char actually matched (useful when scanning for multiple triggers); `query` is the substring between the trigger and the caret.

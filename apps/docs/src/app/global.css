@@ -1,0 +1,210 @@
+@import "tailwindcss";
+@import "fumadocs-ui/css/neutral.css";
+@import "fumadocs-ui/css/preset.css";
+@import "@danielivanov/mention/styles.css";
+
+/* ─── Design tokens (light) ────────────────────────────────────────── */
+/*
+ * Palette: paper + ink. Editorial / printed-page posture.
+ *
+ *   Surfaces — very low-chroma warm-paper neutrals (hue 80, chroma
+ *   0.008–0.012). The warmth is subliminal but consistent: light paper,
+ *   dark paper, never flat grey.
+ *
+ *   Foreground — cool ink (hue 260) on warm paper. The hue split is
+ *   intentional — text reads as "ink on page," not "tinted text on
+ *   tinted bg." Light + dark both invert the warm/cool pairing, so the
+ *   feeling of contrast is preserved.
+ *
+ *   Accent — deep ink-blue (hue 245). Reads as a *signal* on warm paper
+ *   without competing with the body. Distinct from the SaaS palette —
+ *   no Tailwind sky, no Vercel blue, no GitHub blue.
+ *
+ * Lightness softened off the extremes (0.965 / 0.16, never 1.0 / 0.0)
+ * per the brief: pure black/white never appear in nature.
+ *
+ * Selected via /impeccable + /ui-preview A/B/C compare on 2026-05-03;
+ * earlier candidates archived to ~/.claude/ui-preview-assets/.
+ */
+:root {
+  --bg: oklch(0.965 0.008 80);
+  --bg-elevated: oklch(0.935 0.011 80);
+  --fg: oklch(0.18 0.012 260);
+  --fg-muted: oklch(0.42 0.018 260);
+  --border-subtle: oklch(0.84 0.012 80);
+  --accent: oklch(0.4 0.14 245);
+
+  /* shadcn-compatible bridge — `@danielivanov/mention/styles.css` resolves
+     through these. Defining them at :root means the embedded demos
+     pick up the brand palette without per-demo overrides. */
+  --popover: var(--bg-elevated);
+  --popover-foreground: var(--fg);
+  --border: var(--border-subtle);
+  --accent-foreground: var(--fg);
+  --muted-foreground: var(--fg-muted);
+  --radius: 0.5rem;
+
+  /* Type scale — 1.25 ratio, fluid headings, fixed body */
+  --type-display: clamp(2.5rem, 4vw + 1rem, 5rem);
+  --type-h1: clamp(2rem, 2vw + 1rem, 3rem);
+  --type-h2: clamp(1.25rem, 0.5vw + 1rem, 1.5rem);
+  --type-body: 1rem;
+  --type-meta: 0.875rem;
+
+  /* Spacing scale — multiples of 4px with intentional gaps */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-24: 6rem;
+  --space-32: 8rem;
+}
+
+/* ─── Design tokens (dark) ─────────────────────────────────────────── */
+/* Fumadocs's RootProvider wraps next-themes with attribute="class",
+   so dark mode is signalled via .dark on <html>. The hue pairing
+   inverts: cool-ink surfaces (hue 260) under warm-paper text (hue 80)
+   keeps the same paper+ink feeling at low light. */
+.dark {
+  --bg: oklch(0.16 0.013 260);
+  --bg-elevated: oklch(0.205 0.016 260);
+  --fg: oklch(0.95 0.008 80);
+  --fg-muted: oklch(0.72 0.014 80);
+  --border-subtle: oklch(0.3 0.018 260);
+  --accent: oklch(0.74 0.14 245);
+}
+
+/* ─── Tailwind v4 theme bridge ─────────────────────────────────────── */
+/* Expose tokens + fonts to Tailwind's utility namespace so `text-fg`,
+   `bg-bg-elevated`, `font-display`, etc. work without arbitrary values. */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-border-subtle: var(--border-subtle);
+  --color-accent-brand: var(--accent);
+
+  --font-display: var(--font-display);
+  --font-sans: var(--font-body);
+  --font-mono: var(--font-mono);
+}
+
+/* ─── Base ─────────────────────────────────────────────────────────── */
+html {
+  scrollbar-gutter: stable;
+}
+
+html > body[data-scroll-locked] {
+  /* biome-ignore lint/complexity/noImportantStyles: react-remove-scroll integration — neutralizes the body-scroll-bar-size hack so Fumadocs doesn't shift layout */
+  margin-right: 0px !important;
+  /* biome-ignore lint/complexity/noImportantStyles: react-remove-scroll integration — see comment above */
+  --removed-body-scroll-bar-size: 0px !important;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-size: var(--type-body);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Prose containers cap at a comfortable measure */
+.prose-measure {
+  max-width: 65ch;
+}
+
+/* Selection picks up the brand accent — sparse use, lands on any text */
+::selection {
+  background: color-mix(in oklch, var(--accent) 30%, transparent);
+  color: var(--fg);
+}
+
+/* ─── @danielivanov/mention theme bridge ──────────────────────────────────── */
+/*
+ * Override the lib's selected-item treatment: a tinted wash of accent
+ * instead of a saturated fill. The lib defaults `--mention-item-bg-active`
+ * to `--accent` directly — that forces the option's primary + secondary
+ * text to compete with a high-chroma fill and the secondary text
+ * washes out into the accent.
+ *
+ * Scoped at `[data-mention-popover]` because the lib defines these
+ * tokens inside that selector — a `:root` override would be shadowed.
+ *
+ * Wash strength differs per mode: tints on dark surfaces appear
+ * stronger than the same alpha over light, so dark bumps the alpha
+ * to match the visual presence of light's wash.
+ */
+[data-mention-popover] {
+  --mention-item-bg-active: color-mix(in oklch, var(--accent) 11%, transparent);
+  --mention-item-fg-active: var(--fg);
+}
+.dark [data-mention-popover] {
+  --mention-item-bg-active: color-mix(in oklch, var(--accent) 18%, transparent);
+}
+
+/* ─── Motion ───────────────────────────────────────────────────────── */
+/*
+ * Two entrance patterns — both transform/opacity only (compositor-safe),
+ * both ≤300ms, both reduced-motion-respecting per Emil's playbook.
+ *
+ *   1. `.hero-stagger > *` — page-load entrance for the hero section.
+ *      Children fade-up 8px on mount with a 60ms cascade (`animation-
+ *      delay` keyed off `--i`). One animation, fires once, no JS.
+ *
+ *   2. `[data-reveal]` — scroll-triggered entrance for sections below
+ *      the fold. The `<Reveal>` client wrapper (see components/reveal
+ *      .tsx) flips `data-reveal` from "out" → "in" via IntersectionObserver
+ *      when the element clears a 100px-below-viewport threshold. The
+ *      transition runs once, then the IO disconnects.
+ *
+ * Reduced-motion fallback strips translation but keeps the opacity fade
+ * — Emil's `polish-dont-remove-all`: motion-sensitive users still get
+ * orientation cues from the fade.
+ */
+
+@keyframes hero-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.hero-stagger > * {
+  animation: hero-rise 350ms ease-out backwards;
+  animation-delay: calc(var(--i, 0) * 60ms);
+}
+
+[data-reveal] {
+  opacity: 0;
+  transform: translate3d(0, 8px, 0);
+  transition:
+    opacity 250ms ease-out var(--reveal-delay, 0ms),
+    transform 250ms ease-out var(--reveal-delay, 0ms);
+}
+
+[data-reveal="in"] {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-stagger > * {
+    animation: none;
+  }
+  [data-reveal] {
+    transform: none;
+    transition: opacity 150ms linear var(--reveal-delay, 0ms);
+  }
+}

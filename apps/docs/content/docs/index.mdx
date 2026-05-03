@@ -1,0 +1,76 @@
+---
+title: "@danielivanovz/mention"
+description: "Headless, a11y-first React mention primitive for textareas. ~11 kB gzip. shadcn-friendly."
+---
+
+import { MentionDemo } from "@/components/mention-demo";
+
+A small, focused take on the `@`-mention pattern — built around the WAI-ARIA combobox-as-substring contract and the `<textarea>` your users already know how to use. No editor framework. Bring your own design system, or use the default theme.
+
+## Try it
+
+Type <kbd>@</kbd> at the start of a word, then <kbd>↑</kbd>/<kbd>↓</kbd> to navigate, <kbd>Enter</kbd> to commit, <kbd>Esc</kbd> to dismiss while keeping typed text.
+
+<MentionDemo />
+
+## Install
+
+```sh
+bun add @danielivanovz/mention
+```
+
+Peers: `react` ≥ 19, `react-dom` ≥ 19. One runtime dep: `@floating-ui/react-dom`.
+
+## Usage
+
+```tsx title="message-input.tsx"
+import { Mention } from "@danielivanovz/mention";
+import "@danielivanovz/mention/styles.css";
+
+const users = [
+  { id: 1, name: "Daniel" },
+  { id: 2, name: "Daria" },
+  { id: 3, name: "Marcus" },
+];
+
+export function MessageInput() {
+  return (
+    <Mention.Root
+      items={users}
+      getKey={(u) => u.id}
+      getLabel={(u) => u.name}
+      onSelect={(u) => console.log("picked", u)}
+    >
+      <Mention.Input aria-label="Message" />
+      <Mention.Popover>
+        <Mention.List>
+          {(u) => <Mention.Item value={u}>{u.name}</Mention.Item>}
+        </Mention.List>
+        <Mention.Empty>No people found</Mention.Empty>
+      </Mention.Popover>
+    </Mention.Root>
+  );
+}
+```
+
+That's the whole library.
+
+## Why
+
+- **A11y by default.** Permanent `role="combobox"` on the textarea, full APG contract: `aria-expanded`, `aria-controls`, `aria-activedescendant`, `aria-autocomplete="list"`. Mid-word `@` (email patterns) is suppressed.
+- **Textarea-native.** Uses the `<textarea>` you already render — no contenteditable, no editor framework. Copy/paste, undo/redo, IME, mobile autocorrect — all "just work".
+- **Caret-anchored popover.** Floating UI virtual element + vendored caret-position math; the popover follows the `@` as the user types.
+- **shadcn-friendly.** Default CSS uses shadcn's CSS variables (`--popover`, `--accent`, …). Drop in, or pass `unstyled` and bring your own.
+- **Small.** Well under a 12 kB gzip ceiling, enforced in CI.
+
+## Where to next
+
+- **[API reference](/docs/api-reference)** — every prop, type, and escape-hatch field, with defaults.
+- **[Recipes](/docs/recipes/async-items)** — async fetchers, custom rendering, controlled forms, styling, i18n & RTL.
+- **[Accessibility](/docs/accessibility)** — the combobox-as-substring contract, AT matrix, documented axe exceptions.
+- **[Troubleshooting](/docs/troubleshooting)** — common pitfalls (mid-word triggers, key warnings, popover drift).
+- **[Internals](/internals/caret-anchoring)** — caret-anchoring math, ARIA contract under the hood.
+
+## Status
+
+v0.1 — single trigger, `<textarea>` only. Multi-trigger and contenteditable land in v0.2; the public types are already locked.

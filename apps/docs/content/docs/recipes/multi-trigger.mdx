@@ -1,0 +1,226 @@
+---
+title: Multi-trigger
+description: Host any combination of trigger characters in one editor — every trigger char and every item shape is yours to define, with full type safety per channel.
+---
+
+`<Mention.Root>` is overloaded. The single-trigger form takes top-level `items` / `getKey` / `getLabel` / `getInsertText`. The multi-trigger form takes a `triggers` map keyed by the characters you choose, with each entry carrying its own channel config.
+
+There's nothing the library prescribes about *which* triggers you use, *what* an item is, or *how* it's formatted on commit. Every channel's data and behaviour is yours.
+
+## A concrete example with three different triggers
+
+Slash for commands, `@` for people, `:` for emoji shortcodes — three triggers, three completely different item shapes, three different insert formats:
+
+```tsx
+import { Mention } from "@danielivanovz/mention";
+
+interface Command { id: string; name: string; description: string }
+interface Person  { id: number; handle: string }
+interface Emoji   { code: string; char: string }
+
+const COMMANDS: Command[] = [
+  { id: "summarise", name: "summarise", description: "Summarise the thread" },
+  { id: "translate", name: "translate", description: "Translate to English" },
+];
+const PEOPLE: Person[] = [/* ... */];
+const EMOJI:  Emoji[]  = [/* ... */];
+
+const TRIGGERS = {
+  "/": {
+    items: COMMANDS,
+    getKey:   (c) => c.id,
+    getLabel: (c) => c.name,
+    getInsertText: (c) => `/${c.name}`,
+  },
+  "@": {
+    items: PEOPLE,
+    getKey:   (p) => p.id,
+    getLabel: (p) => p.handle,
+    // omit getInsertText → defaults to `@${getLabel(item)}`
+  },
+  ":": {
+    items: EMOJI,
+    getKey:   (e) => e.code,
+    getLabel: (e) => e.code,
+    getInsertText: (e) => e.char,    // insert the actual emoji char, not :code:
+  },
+} as const;
+
+export function Composer() {
+  return (
+    <Mention.Root<{
+      "/": Command;
+      "@": Person;
+      ":": Emoji;
+    }>
+      triggers={TRIGGERS}
+      onSelect={(payload) => {
+        if ("/" in payload) runCommand(payload["/"]);
+        if ("@" in payload) tagPerson(payload["@"]);
+        if (":" in payload) trackEmojiPick(payload[":"]);
+      }}
+    >
+      <Mention.Input aria-label="Message" />
+      <Mention.Popover>
+        {/* One typed list per channel — no runtime cast.
+            <Mention.List<TItem> trigger="X"> only renders while
+            channel X is active, and the render-prop is fully
+            typed for X's item shape. */}
+        <Mention.List<Command> trigger="/">
+          {(cmd) => (
+            <Mention.Item value={cmd}>
+              <strong>/{cmd.name}</strong>
+              <span style={{ marginLeft: 8, opacity: 0.6 }}>
+                {cmd.description}
+              </span>
+            </Mention.Item>
+          )}
+        </Mention.List>
+        <Mention.List<Person> trigger="@">
+          {(person) => (
+            <Mention.Item value={person}>@{person.handle}</Mention.Item>
+          )}
+        </Mention.List>
+        <Mention.List<Emoji> trigger=":">
+          {(emoji) => (
+            <Mention.Item value={emoji}>
+              <span style={{ fontSize: 18 }}>{emoji.char}</span>
+              <span style={{ marginLeft: 8, opacity: 0.6 }}>:{emoji.code}:</span>
+            </Mention.Item>
+          )}
+        </Mention.List>
+        <Mention.Empty>Nothing found</Mention.Empty>
+      </Mention.Popover>
+    </Mention.Root>
+  );
+}
+```
+
+That's the surface. **You pick the trigger chars. You pick the item shapes. You pick the insert formats. You write the `onSelect` handler however you want.** The library does the dispatch, the ARIA wiring, and the caret-anchored positioning.
+
+## Type safety per channel — no casts
+
+The pattern that makes this clean: `<Mention.List<TItem> trigger="X">`. The `trigger` prop scopes the list to a single channel; the generic `TItem` types the render-prop. The library guarantees that whenever the active trigger is `X`, the items in context are from channel `X` — so you can declare the type once at the JSX call site and TypeScript flows it through everywhere.
+
+```tsx
+<Mention.List<Command> trigger="/">
+  {(cmd) => /* cmd is fully typed as Command */}
+</Mention.List>
+```
+
+No `as`, no field-presence checks, no discriminated-union narrowing on the consumer side. One typed list per channel, composed inside the same `<Mention.Popover>`.
+
+## How channel resolution works
+
+Whichever trigger character the user types defines the **active channel**. The dispatcher scans backwards from the caret; the first trigger character it hits (closest to the caret) wins. Typing `Hey @ali #ge` with caret at the end resolves to `#`, not `@` — exactly what users expect.
+
+When the active channel changes, the popover's items, label resolver, and insertion formatter all swap. There is no stale state to clear; channels are independent.
+
+## The `onSelect` payload shape
+
+`onSelect` receives a payload keyed by the trigger character that fired. TypeScript narrows it for you, derived from *your* `TItemMap`:
+
+```ts
+onSelect={(payload) => {
+  if ("/" in payload) {
+    // payload["/"] is your Command type
+  }
+  if (":" in payload) {
+    // payload[":"] is your Emoji type
+  }
+}}
+```
+
+The runtime shape is just `{ [activeTrigger]: theItem }` — one key per commit. The narrowing is a TypeScript consequence of how you declared `TItemMap`. Use any keys, any types.
+
+## Per-channel async fetchers
+
+Each channel's `items` accepts the same shapes as the single-trigger form — sync arrays *or* `(query, signal) => Promise<readonly TItem[]>`. The library only ever fetches the active channel, and aborts in-flight requests via the `AbortSignal` when the user switches channels or dismisses:
+
+```tsx
+triggers={{
+  "@": {
+    items: async (q, signal) =>
+      fetch(`/api/users?q=${q}`, { signal }).then((r) => r.json()),
+    getKey:   (u) => u.id,
+    getLabel: (u) => u.handle,
+  },
+  "#": {
+    items: CHANNELS,           // sync array — no fetch
+    getKey:   (c) => c.id,
+    getLabel: (c) => c.name,
+  },
+}}
+```
+
+## Default insert behaviour
+
+When you omit `getInsertText`, the library inserts `` `${trigger}${getLabel(item)}` `` (the trigger character followed by the item's label) and appends a single trailing space. Override with `getInsertText` whenever you want something else — markdown links, mention syntax with IDs, raw emoji characters, JSON tags, anything.
+
+## Stability
+
+The library is internally resilient to consumer-side identity churn — handler closures (`commit`, `getInputProps`, `getItemProps`) keep referential equality across renders even when you rebuild the `triggers` record inline (`triggers={{...}}`). This is the [`advanced-use-latest`](https://react.dev/reference/react/useEffectEvent) pattern: latest values flow through internal refs, effect deps narrow to primitives + the active channel's items reference. Inline props are safe; you don't need to defensively memoize.
+
+For genuinely large item arrays you build per-render, hoisting still helps with referential equality of the items themselves (which the library *does* subscribe to as a re-filter signal — that's the correct behaviour). Hoisting is optional, not required.
+
+## Headless escape hatch — `useMentionMulti<TItemMap>()`
+
+If the compound API doesn't fit your UI (command palettes, inline suggestions, custom positioning, fully custom popovers), drop down to the typed hook:
+
+```tsx
+import { useMentionMulti } from "@danielivanovz/mention";
+
+function CommandPalette() {
+  const ctx = useMentionMulti<{ "/": Command; "@": Person }>({
+    triggers: TRIGGERS,
+    onSelect: (payload) => {
+      if ("/" in payload) runCommand(payload["/"]);
+      if ("@" in payload) tagPerson(payload["@"]);
+    },
+  });
+
+  return (
+    <>
+      <textarea {...ctx.getInputProps()} aria-label="Message" />
+      {ctx.open && (
+        <YourCustomListbox {...ctx.getPopoverProps()}>
+          {ctx.activeTrigger === "/" &&
+            (ctx.items as readonly Command[]).map((cmd, i) => (
+              <li key={cmd.id} {...ctx.getItemProps(cmd, i)}>
+                /{cmd.name}
+              </li>
+            ))}
+          {ctx.activeTrigger === "@" &&
+            (ctx.items as readonly Person[]).map((p, i) => (
+              <li key={p.id} {...ctx.getItemProps(p, i)}>
+                @{p.handle}
+              </li>
+            ))}
+        </YourCustomListbox>
+      )}
+    </>
+  );
+}
+```
+
+The hook returns the same context the compound API uses internally, plus an `activeTrigger: keyof TItemMap | null` field. The `as` casts above are at the *boundary* between the type-erased hook return and your typed render — narrow once after the `activeTrigger` check and you're done. (The compound API's `<Mention.List<TItem> trigger="X">` pattern avoids casts entirely; the hook has them because the return shape is shared across channels.)
+
+For the lowest-level case — driving the dispatcher entirely by hand — `findActiveMention` is also exported:
+
+```ts
+import { findActiveMention } from "@danielivanovz/mention";
+
+const active = findActiveMention(value, caret, ["/", "@", ":"]);
+if (active !== null) {
+  // active.trigger is which char fired; active.query is the typed substring
+}
+```
+
+## Trigger isolation rules
+
+The same word-boundary rule applies to every channel: a trigger character only opens the popover when the character before it is whitespace, the start of input, or — for non-whitespace-segmented scripts (CJK / Thai / Khmer / Lao / Myanmar) — a character in one of those scripts. So `foo@bar` (email pattern) suppresses, but `Hey @ali` opens. Adjacent triggers like `@#foo` are nonsensical input — they fail the isolation check and the popover stays closed.
+
+## Constraints
+
+- **Single-character triggers only.** Multi-character sequences (e.g. `:::`) are not supported.
+- **Listbox shows one channel at a time.** Per-channel `<Mention.List<TItem> trigger="X">` is the recommended pattern — it gives full type safety with no casts. The hook form (`useMentionMulti`) requires one cast per channel after narrowing on `activeTrigger`.

@@ -1,0 +1,75 @@
+---
+title: i18n & RTL
+description: Unicode word-boundary behaviour, RTL caret tracking, IME composition guards.
+---
+
+`@danielivanovz/mention` ships with the Unicode plumbing most mention libraries skip — CJK word boundaries, RTL bidi-aware caret math, and IME composition guards.
+
+## Unicode word boundaries
+
+The trigger character (`@` by default) only fires when it sits at a word boundary — start-of-input, after whitespace, or after a CJK / Thai / Khmer / Lao / Myanmar character. This is what blocks email-like false positives (`foo@bar.com` does **not** open the menu).
+
+For non-whitespace-segmented scripts the library uses Unicode property regex on the previous character to detect the soft boundary:
+
+```ts
+// triggers: previous char is hiragana / kanji / hangul / etc.
+"こんにちは@田" // → opens at @, query = "田"
+"한국어 @" // → opens at @
+"ภาษาไทย@" // → opens at @
+```
+
+### Known limitation: Han + @ + Latin
+
+`用户@example` — Han characters then `@` then Latin — opens the menu. The library can't distinguish this from the intended CJK trigger case (`こんにちは@田中`) at the dispatcher layer; both produce identical `Intl.Segmenter` output. The bias is toward triggering, since CJK users genuinely need the feature; the rare email-like patterns prompt the popover, which Escape dismisses.
+
+If your domain has many email-like Han+@+Latin patterns and few real mentions, override the trigger to a different character (for example, `＠` (U+FF20, fullwidth at-sign) used in CJK contexts).
+
+## RTL — Hebrew, Arabic
+
+The mirror-div caret math is direction-aware. Set `dir="rtl"` on the textarea (or any ancestor) and the popover follows the caret correctly for right-to-left scripts:
+
+```tsx
+<Mention.Input dir="rtl" aria-label="הודעה" />
+```
+
+The library copies `direction` and `unicode-bidi` to the mirror so its bidi resolution matches the textarea exactly.
+
+### RTL caveats
+
+- **Pixel-perfect caret tracking at end-of-content** is environment-dependent in chromium's RTL inline layout. The mid-content trigger case (the typical mention scenario) is precise; tracking a caret past the last character of pure RTL content may drift by a few pixels in some font / wrap conditions.
+- **`getInsertText` should match the user's locale.** Inserting `@username` into an RTL textarea produces a left-to-right run inside RTL content; the bidi algorithm handles the visual direction correctly but consider whether you want to wrap with explicit Unicode bidi controls (U+202B / U+202C) for stable cursor behavior near the chip.
+
+## IME composition (CJK input methods)
+
+Japanese, Chinese Pinyin, and other input methods commit multiple characters at once via `compositionstart` / `compositionend` events. The library suppresses dispatch during composition so intermediate composing characters don't spuriously open or close the popover.
+
+```ts
+// Internal flow:
+//   1. compositionstart → set isComposingRef = true
+//   2. change events fire for each composing keystroke → ignored
+//   3. compositionend → set isComposingRef = false, run the full scan
+```
+
+You don't need to wire anything — `<Mention.Input>` handles it. If you're using `useMention()` with a custom textarea, spread `getInputProps()` to inherit the same guards.
+
+The composition contract is pinned by 3 RTL tests + 1 chromium e2e test driving synthetic `CompositionEvent`s, plus a manual smoke rig at `packages/react/manual-at/ime/` covering macOS Japanese, Windows Pinyin, and Android Gboard against the live IME stack. See the [Accessibility › IME smoke rig](/docs/accessibility#ime-smoke-rig) section for invariants and how to reproduce.
+
+## Locale-aware filtering
+
+The library doesn't filter items for you — that's the consumer's job. For locale-aware sort / match, pass `Intl.Collator` into your filter:
+
+```ts
+const collator = new Intl.Collator(navigator.language, {
+  sensitivity: "base", // ignore case + diacritics
+  usage: "search",
+});
+
+function filter<T>(items: readonly T[], q: string, getLabel: (i: T) => string) {
+  if (!q) return items;
+  return items.filter((i) =>
+    collator.compare(getLabel(i).slice(0, q.length), q) === 0,
+  );
+}
+```
+
+For CJK fuzzy matching, libraries like `fuse.js` (with `getFn` reading romanised aliases) round it out — but that's beyond the primitive's scope.

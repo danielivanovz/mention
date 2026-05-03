@@ -1,0 +1,20 @@
+.misc/
+node_modules/
+dist/
+.DS_Store
+*.tsbuildinfo
+# Internal development artifacts (kept locally, not shipped or pushed).
+.impeccable.md
+AGENTS.md
+ROADMAP.md
+ROADMAP.csv
+docs/
+# Playwright artifacts — traces, screenshots, HTML reports.
+playwright-report/
+test-results/
+# Playwright MCP server — transient session artifacts (snapshots, downloads).
+.playwright-mcp/
+# Stryker mutation testing artifacts.
+.stryker-tmp/
+reports/mutation/
+.vercel

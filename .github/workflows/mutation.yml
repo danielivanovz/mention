@@ -1,0 +1,90 @@
+name: Mutation testing
+
+# Mutation testing is expensive (Stryker runs the test suite once per mutant),
+# so we don't gate PRs on it. Instead, run nightly against `main` and surface
+# regressions via the HTML report artifact + workflow summary.
+#
+# Scope: deterministic logic only (`src/state/popover-reducer.ts` +
+# `src/text/caret.ts`). React glue is excluded — component tests are
+# timing-coupled and flake under mutation. See `stryker.config.json`.
+#
+# Manual trigger via `workflow_dispatch` lets us re-run on demand
+# (e.g. after a logic refactor) without waiting for the nightly cron.
+
+on:
+  schedule:
+    # 03:17 UTC nightly — off-peak, prime number to avoid the 0/15/30/45-minute
+    # GitHub Actions stampede that delays cron jobs.
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: mutation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  stryker:
+    name: stryker · popover-reducer + caret (happy-dom)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/react
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run Stryker
+        run: bun run test:mutation
+
+      - name: Upload mutation report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: stryker-report
+          path: packages/react/reports/mutation/
+          retention-days: 30
+
+  stryker-browser:
+    # Browser-mode mutation testing for `caret.ts`. happy-dom can't observe
+    # pixel-math mutants because it skips layout, so the run above caps
+    # caret at 26.67%. This job mounts the same caret tests in real
+    # chromium via @vitest/browser, which lifts caret coverage to the
+    # range where pixel-arithmetic mutants are caught. Runs in parallel
+    # with the main job (independent test suite) so wall time is bounded
+    # by the slower one.
+    name: stryker · caret (chromium)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/react
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        # @vitest/browser-playwright reuses Playwright; install only
+        # chromium to keep the runner spin-up fast.
+        run: bunx playwright install --with-deps chromium
+
+      - name: Run Stryker (browser)
+        run: bun run test:mutation:browser
+
+      - name: Upload browser mutation report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: stryker-report-browser
+          path: packages/react/reports/mutation-browser/
+          retention-days: 30

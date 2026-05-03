@@ -1,0 +1,142 @@
+---
+title: TipTap
+description: EditorAdapter implementation for TipTap (ProseMirror). Substring + atomic-chip arms.
+---
+
+[TipTap](https://tiptap.dev/) wraps [ProseMirror](https://prosemirror.net/) with a React-friendly API. The selection model is ProseMirror's: 1-indexed text offsets across the entire document. The adapter maps PM positions to/from the library's 0-indexed character model.
+
+> Install: `npm install @tiptap/react @tiptap/starter-kit`. The mention library has no TipTap dependency — this adapter lives in your app code.
+
+## Adapter
+
+```tsx
+// adapters/tiptap.ts
+import type { EditorAdapter, MentionInsertResult, ChipInsertInput } from "@danielivanovz/mention";
+import type { Editor } from "@tiptap/react";
+
+export function createTipTapAdapter(editor: Editor): EditorAdapter {
+  const rootEl = editor.view.dom as HTMLElement;
+
+  return {
+    element: rootEl,
+    getValue: () => editor.getText(),
+    getCaretOffset: () => {
+      // ProseMirror positions are 1-indexed and count node boundaries
+      // (each opening/closing tag = 1). For a flat single-paragraph
+      // document, char-offset = pmPos - 1. For multi-block docs you'd
+      // walk via doc.textBetween(0, pmPos, "\n").length.
+      const { from } = editor.state.selection;
+      return editor.state.doc.textBetween(0, from, "\n").length;
+    },
+    getCaretRect: () => {
+      const { from } = editor.state.selection;
+      const coords = editor.view.coordsAtPos(from);
+      // Synthesize a 1×lineHeight rect.
+      return new DOMRect(coords.left, coords.top, 1, coords.bottom - coords.top);
+    },
+    applyInsert: (result: MentionInsertResult) => {
+      // Substring-shape: replace the doc text. Production adapters
+      // should splice just the trigger window via insertContentAt with
+      // PM coordinate conversion; this is the lossy-prototype version.
+      editor.commands.setContent(result.value);
+      editor.commands.focus(result.caret + 1); // PM is 1-indexed
+    },
+    applyChipInsert: (input: ChipInsertInput) => {
+      // Convert library char-offsets to PM positions (assumes single
+      // paragraph for brevity).
+      const triggerPM = input.triggerOffset + 1;
+      const caretPM = input.selectionStart + 1;
+      editor.chain()
+        .focus()
+        .deleteRange({ from: triggerPM, to: caretPM })
+        // Insert a custom node spec that wraps the chip placeholder.
+        // In a real adapter this is a registered ProseMirror node;
+        // here we use insertContent with HTML for brevity.
+        .insertContent({
+          type: "mention",
+          attrs: { id: input.chip.getAttribute("data-mention-id") },
+        })
+        .run();
+    },
+    focus: () => editor.commands.focus(),
+  };
+}
+```
+
+## ProseMirror node spec for chips
+
+```ts
+// adapters/mention-extension.ts
+import { Node, mergeAttributes } from "@tiptap/core";
+
+export const Mention = Node.create({
+  name: "mention",
+  group: "inline",
+  inline: true,
+  atom: true, // critical — chips are atomic ProseMirror nodes
+  selectable: false,
+
+  addAttributes() {
+    return {
+      id: { default: null, parseHTML: (el) => el.getAttribute("data-mention-id") },
+      text: { default: null, parseHTML: (el) => el.getAttribute("data-mention-text") },
+    };
+  },
+
+  parseHTML() {
+    return [{ tag: "span[data-mention-id]" }];
+  },
+
+  renderHTML({ node, HTMLAttributes }) {
+    return [
+      "span",
+      mergeAttributes(HTMLAttributes, {
+        "data-mention-id": node.attrs.id,
+        "data-mention-text": node.attrs.text,
+        "contenteditable": "false",
+      }),
+      node.attrs.text,
+    ];
+  },
+});
+```
+
+## Wiring
+
+```tsx
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import { useEffect, useRef } from "react";
+import { Mention as MentionLib, useMentionContext } from "@danielivanovz/mention";
+import { createTipTapAdapter } from "./adapters/tiptap";
+import { Mention as MentionExt } from "./adapters/mention-extension";
+
+export function MyEditor() {
+  const editor = useEditor({ extensions: [StarterKit, MentionExt] });
+  if (editor === null) return null;
+  return (
+    <MentionLib.Root items={users} getKey={(u) => u.id} getLabel={(u) => u.name} onSelect={() => {}}>
+      <EditorContent editor={editor} />
+      <MentionBridge editor={editor} />
+      <MentionLib.Popover>
+        <MentionLib.List>{(u) => <MentionLib.Item value={u}>{u.name}</MentionLib.Item>}</MentionLib.List>
+      </MentionLib.Popover>
+    </MentionLib.Root>
+  );
+}
+
+function MentionBridge({ editor }: { editor: Editor }) {
+  const ctx = useMentionContext();
+  useEffect(() => {
+    ctx.adapterRef.current = createTipTapAdapter(editor);
+    return () => { ctx.adapterRef.current = null; };
+  }, [editor, ctx.adapterRef]);
+  return null;
+}
+```
+
+## Caveats
+
+- ProseMirror positions count node boundaries (paragraphs, lists, etc.). The simple `+1` conversion in this recipe assumes a single-paragraph document. For multi-block documents, walk via `doc.descendants` or use `doc.textBetween(0, pmPos, "\n").length` to get the flat char offset.
+- Marks (bold, italic, links) inside the trigger window are preserved by `deleteRange` only when the window is fully inside one mark's span. Splicing across mark boundaries can produce unexpected results — gate the trigger detection on `editor.isActive("paragraph")` if your editor allows trigger characters inside link text.
+- TipTap's `setContent` (used by the substring `applyInsert` here) replaces the entire doc — fine for prototypes, lossy for real editors. Production adapters splice via `editor.commands.insertContentAt({ from, to }, content)`.

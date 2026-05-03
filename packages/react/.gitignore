@@ -1,0 +1,10 @@
+/node_modules
+/dist
+/playwright-report
+/test-results
+/.stryker-tmp
+/.stryker-tmp-browser
+/reports
+/.vitest-attachments
+**/__screenshots__/
+*.tsbuildinfo

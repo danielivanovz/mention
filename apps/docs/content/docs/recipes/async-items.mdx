@@ -1,0 +1,99 @@
+---
+title: Async items
+description: Fetch suggestions over the network with debounced cancellation, loading and error states.
+---
+
+`items` accepts a fetcher: `(query, signal) => Promise<readonly TItem[]>`. The library passes an `AbortSignal` you can hand straight to `fetch` — when the user keeps typing, in-flight requests get cancelled before they resolve, so late results never overwrite fresh ones.
+
+## Minimal fetcher
+
+```tsx
+import { Mention } from "@danielivanovz/mention";
+
+interface User {
+  id: number;
+  username: string;
+  name: string;
+}
+
+async function searchUsers(
+  query: string,
+  signal: AbortSignal,
+): Promise<readonly User[]> {
+  const res = await fetch(
+    `/api/users?q=${encodeURIComponent(query)}`,
+    { signal },
+  );
+  if (!res.ok) throw new Error(`Search failed: ${res.status}`);
+  return res.json();
+}
+
+export function MessageInput() {
+  return (
+    <Mention.Root
+      items={searchUsers}
+      getKey={(u) => u.id}
+      getLabel={(u) => u.name}
+      onSelect={(u) => console.log("picked", u)}
+    >
+      <Mention.Input aria-label="Message" />
+      <Mention.Popover>
+        <Mention.List>
+          {(u) => (
+            <Mention.Item value={u}>
+              <strong>{u.name}</strong>
+              <span className="text-muted-foreground"> @{u.username}</span>
+            </Mention.Item>
+          )}
+        </Mention.List>
+        <Mention.Loading>Searching…</Mention.Loading>
+        <Mention.Empty>No people found</Mention.Empty>
+      </Mention.Popover>
+    </Mention.Root>
+  );
+}
+```
+
+## Debouncing
+
+The library debounces the fetcher by **150ms** by default. Tune via `debounceMs`:
+
+```tsx
+<Mention.Root items={searchUsers} debounceMs={300} /* … */ />
+```
+
+Pass `0` to disable — useful when items resolve instantly from a local cache.
+
+## Cancellation
+
+The `AbortSignal` is the canonical lever — pass it to every async call inside the fetcher and the runtime takes care of the rest:
+
+```ts
+async function searchUsers(query: string, signal: AbortSignal) {
+  const [users, channels] = await Promise.all([
+    fetch(`/api/users?q=${query}`, { signal }).then((r) => r.json()),
+    fetch(`/api/channels?q=${query}`, { signal }).then((r) => r.json()),
+  ]);
+  return [...users, ...channels];
+}
+```
+
+When the query advances, the library calls `controller.abort()` on the previous signal, which propagates to every `fetch` and rejects the wrapping Promise with an `AbortError`. The library swallows `AbortError` automatically; only genuine errors trip the `error` status.
+
+## Error and loading states
+
+`<Mention.Loading>` renders while the fetcher is pending. `<Mention.Empty>` renders when the resolved list is empty. The library exposes `status` via `useMention()` for finer-grained UI:
+
+```tsx
+const { status } = useMention(props);
+
+if (status === "error") {
+  return <p role="alert">Couldn't load suggestions. Try again.</p>;
+}
+```
+
+## Common pitfalls
+
+- **Race conditions without the signal.** Forgetting to pass `signal` to `fetch` is the #1 source of "wrong list briefly flashes." Always include it.
+- **Returning fresh array references from sync data.** If `items` is an array, pass a stable reference (memoised, or hoisted out of the component) — fresh arrays per render trigger the same internal-state churn that pure async fetchers avoid.
+- **Throwing inside the fetcher for "no results."** Return `[]` instead. Empty is a valid steady state (`<Mention.Empty>` renders); throwing is reserved for transport / parse errors.

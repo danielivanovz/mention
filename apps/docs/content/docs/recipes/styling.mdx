@@ -1,0 +1,111 @@
+---
+title: Styling
+description: Default theme tokens, the unstyled opt-out, shadcn variable bridging, dark mode.
+---
+
+`@danielivanovz/mention` ships a small CSS file (~400 lines) that resolves through shadcn-compatible CSS variables. Drop it into a shadcn project and the popover inherits the theme automatically. Or pass `unstyled` and bring your own.
+
+## Default styling
+
+Import once at the entry of your app:
+
+```tsx
+import "@danielivanovz/mention/styles.css";
+```
+
+The styles target the data-attributes the library sets — `[data-mention-popover]`, `[data-mention-item]`, etc. — so they don't conflict with your component classnames.
+
+## Theme tokens
+
+The default styles read these CSS variables from `:root` (and `.dark` for dark mode). They're shadcn-compatible — if you already have shadcn set up, nothing else to do:
+
+| Variable | Used for |
+|---|---|
+| `--popover` | Popover background. |
+| `--popover-foreground` | Popover text colour. |
+| `--border` | Popover border + dividers. |
+| `--accent` | Highlighted item background. |
+| `--accent-foreground` | Highlighted item text. |
+| `--muted-foreground` | Secondary text inside items. |
+| `--radius` | Border radius (popover + items). |
+
+Define them in your stylesheet:
+
+```css
+:root {
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0.01 75);
+  --border: oklch(0.88 0.008 75);
+  --accent: oklch(0.62 0.16 65);
+  --accent-foreground: oklch(0.99 0 0);
+  --muted-foreground: oklch(0.45 0.012 75);
+  --radius: 0.5rem;
+}
+
+.dark {
+  --popover: oklch(0.22 0.012 75);
+  /* … */
+}
+```
+
+## Unstyled mode
+
+When the default theme doesn't fit (you're shipping a fully custom design system), pass `unstyled` to skip the CSS class application:
+
+```tsx
+<Mention.Root unstyled /* … */>
+  <Mention.Input className="my-textarea" />
+  <Mention.Popover className="my-popover">
+    <Mention.List>
+      {(u) => (
+        <Mention.Item value={u} className="my-option">
+          {u.name}
+        </Mention.Item>
+      )}
+    </Mention.List>
+  </Mention.Popover>
+</Mention.Root>
+```
+
+The structural ARIA wiring still emits — `role`, `aria-*`, ids, key handlers — only visual styling is skipped. You can also skip the CSS import entirely.
+
+## Highlighted state
+
+The library exposes `data-highlighted` on the active option. Style it however you like:
+
+```css
+.my-option[data-highlighted] {
+  background: oklch(0.95 0.02 240);
+}
+```
+
+Don't rely on `:hover` for the keyboard-active state — the library uses pointer-driven `HIGHLIGHT_AT` to keep mouse and keyboard in sync, and `[data-highlighted]` is the single source of truth.
+
+## Tailwind v4
+
+Bind the CSS variables in `@theme inline` so Tailwind utilities pick them up:
+
+```css
+@theme inline {
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+}
+```
+
+Then use `bg-popover`, `text-popover-foreground`, etc. in your custom items.
+
+## Dark mode
+
+The default styles target `.dark` on `<html>` (the next-themes / shadcn convention). If you use a different attribute selector, redefine the dark tokens there:
+
+```css
+[data-theme="dark"] {
+  --popover: oklch(0.22 0.012 75);
+  /* … */
+}
+```
+
+Or just override the relevant variables in your global theme file — the library doesn't care where they resolve from.
