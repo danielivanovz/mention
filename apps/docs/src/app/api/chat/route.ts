@@ -38,15 +38,15 @@ async function createSearchServer() {
   });
 
   const docs = await chunkedAll(
-    source.getPages().map(async (page) => {
-      if (!("getText" in page.data)) return null;
-
+    source.getPages().map(async (page): Promise<CustomDocument | null> => {
+      const { title, description } = page.data;
+      if (title === undefined) return null;
       return {
-        title: page.data.title,
-        description: page.data.description,
+        title,
+        description: description ?? "",
         url: page.url,
         content: await page.data.getText("processed"),
-      } as CustomDocument;
+      };
     }),
   );
 

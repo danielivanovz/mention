@@ -114,9 +114,9 @@ export default function AriaContractPage() {
           </dl>
 
           <p className="mt-10 max-w-prose text-fg-muted text-pretty">
-            ADR-0001 captures the architecture decision; Spike 002 evaluated and
-            rejected Base UI's Combobox primitive on contract-mismatch grounds —
-            the headline reason was role mutation at runtime.
+            Base UI's Combobox primitive was evaluated and rejected on
+            contract-mismatch grounds — the headline reason was role mutation
+            at runtime.
           </p>
         </div>
       </section>
