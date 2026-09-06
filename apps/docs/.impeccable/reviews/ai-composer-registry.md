@@ -43,3 +43,7 @@ The finish reviewer accepted the retained visual world and requested one batch o
 The approved composition, colors, reading density, and control language remain intact. No unresolved finding from this finish batch remains. One-off layout values, dependency defaults, sample data, and demo-only controls were not promoted into global design tokens.
 
 Disposition: **SHIP** for the locally verified extension. Publication and deployment remain separate actions with the limits above.
+
+## Copy cleanup, 7 September 2026
+
+The follow-up to `0de3a04` removes repeated composer explanations, verbose sample replies, generic landing copy, and defensive documentation prose. Busy announcements remain available to screen readers. All 18 composer browser checks, types, production build, scoped lint, and registry validation passed. Desktop/mobile captures, axe checks, source copying, and Markdown exports passed; evidence is in `/tmp/mention-copy-review/`. The loader wrapper stays because removing it fails Fumadocs component type checking.

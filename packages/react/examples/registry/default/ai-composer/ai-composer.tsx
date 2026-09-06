@@ -234,12 +234,8 @@ export function AiComposer({
             Type @ to reference a document. Enter selects, then sends.
             Shift+Enter adds a line.
           </p>
-          <p role="status" className="text-sm text-muted-foreground">
-            {busy
-              ? "Receiving response…"
-              : messages.length
-                ? "Draft stays here if the response is stopped or fails."
-                : "References keep their identity when you edit, paste, or undo."}
+          <p role="status" className="sr-only">
+            {busy ? "Receiving response…" : ""}
           </p>
           {error && (
             <div

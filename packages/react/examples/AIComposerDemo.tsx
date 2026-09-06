@@ -9,7 +9,7 @@ import type {
   ContextMessage,
 } from "@/registry/default/ai-composer/context-message";
 
-export const sampleDocuments: ContextDocument[] = [
+const sampleDocuments: ContextDocument[] = [
   {
     id: "doc-pricing",
     name: "pricing.md",
@@ -47,8 +47,8 @@ export function AIComposerDemo({ active = true }: { active?: boolean }) {
           .sleep(200)
           .text(
             refs.length
-              ? `Received ${refs.map((ref) => ref.name).join(" and ")} as ${refs.length === 1 ? "a document reference" : "document references"}. This sample response confirms the selection; a connected application would resolve their contents before asking the model.`
-              : "Received your message without document references. Try typing @ to choose a document, then send again. This is a scripted sample response.",
+              ? `Your message includes references to ${refs.map((ref) => ref.name).join(" and ")}.`
+              : "Your message has no document references.",
           );
       },
     });

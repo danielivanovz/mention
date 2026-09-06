@@ -3,13 +3,13 @@ title: AI composer
 description: Add document references to a shadcn/ui composer with AI SDK 7 and Lexical.
 ---
 
-Let someone write “Compare @pricing.md with @roadmap.md” and submit the IDs of the documents they actually selected. Mention handles suggestions, Lexical owns the draft and reference nodes, shadcn/ui supplies the controls and conversation, and AI SDK handles message transport.
+Write “Compare @pricing.md with @roadmap.md” and send the selected document IDs with your message. Mention handles suggestions, Lexical stores the draft and references, shadcn/ui supplies the controls, and AI SDK sends and receives messages.
 
 ## Try the interaction
 
 Type `@`, choose a document, then press Enter again to send. Delete a reference or undo its deletion before sending to see how the request changes. **View submitted context** shows the exact outgoing message parts.
 
-This demo uses `@shadcn/helpers/ai-sdk` to stream scripted responses through `useChat`. It makes no model or network request. Enable **Fail the next response** to try recovery; the draft remains until a response completes successfully. Stopping a response also keeps the draft.
+Responses are scripted in your browser. Enable **Fail the next response** to try recovery. Stopping or failing a response keeps your draft.
 
 <div className="docs-example not-prose"><AIComposerDemo /></div>
 
@@ -21,9 +21,9 @@ In a React 19 project configured for shadcn/ui:
 npx shadcn@latest add danielivanovz/mention/ai-composer
 ```
 
-The item installs Mention 0.2, AI SDK 7, the matching React hooks, Lexical 0.50, and the required shadcn components. It copies four application files into your configured components directory: the composer, editor host, message types, and server resolver. Helpers and sample data belong to this website and are excluded from the registry item.
+The item installs Mention 0.2, AI SDK 7, the matching React hooks, Lexical 0.50, and the required shadcn components. It copies four files into your components directory: the composer, editor host, message types, and server resolver.
 
-Inspect the install first with `shadcn view danielivanovz/mention/ai-composer` or add `--dry-run` to the install command. You can pin a GitHub revision with `#<commit-or-tag>` after the item address. This GitHub address works independently of the shadcn namespace directory; Mention does not currently claim an approved namespace there.
+Preview the files with `shadcn view danielivanovz/mention/ai-composer` or add `--dry-run` to the install command. Append `#<commit-or-tag>` to the item address to pin a GitHub revision.
 
 Render the copied composer with the documents the current user may search:
 
@@ -40,7 +40,7 @@ export function DocumentChat() {
 }
 ```
 
-The default transport posts to `/api/chat` on your application's origin. Pass a `ChatTransport<ContextMessage>` as `transport` to use another AI SDK transport. Configure a model route in your own application before sending; the registry deliberately does not create an anonymous model endpoint or choose credentials.
+Configure your application's authenticated `/api/chat` route before sending. The composer posts there by default. Pass a `ChatTransport<ContextMessage>` as `transport` to use another endpoint or transport.
 
 ## Turn references into model context
 
@@ -48,7 +48,7 @@ The user message contains a text part and, when needed, a typed `data-mentions` 
 
 `onSelect` is an insertion notification, not the current reference inventory. Never accumulate a second list there: it would include mentions deleted later and miss mentions restored through undo or clipboard paste.
 
-AI SDK's `convertToModelMessages` drops custom data parts unless you convert them explicitly. The included `resolveContextMessages` validates the incoming message shape, resolves each ID through your server-owned lookup, and converts the authoritative document name and contents into model-visible text. Missing or inaccessible documents reject the request rather than silently reducing its context.
+AI SDK's `convertToModelMessages` drops custom data parts unless you convert them explicitly. `resolveContextMessages` validates the message, looks up each ID on your server, and includes the stored document name and contents as text for the model. It rejects requests with missing or inaccessible documents.
 
 Call it from your route before invoking the model:
 
@@ -74,7 +74,7 @@ This starter handles text conversations and user document references. It rejects
 
 Automated browser checks do not establish real OS IME or screen-reader compatibility. See the [accessibility guide](/docs/accessibility) for those remaining checks.
 
-## Copy the maintained source
+## Source
 
 These are the files installed by the registry and run by this website. The editor host is also shared with the existing Lexical example.
 
@@ -86,6 +86,6 @@ These are the files installed by the registry and run by this website. The edito
 
 <include meta='title="mention-editor.tsx"'>../../../../packages/react/examples/registry/default/ai-composer/mention-editor.tsx</include>
 
-The website wraps that composer with the following sample data and scripted transport. This file is not installed into consumer applications:
+The website demo uses `@shadcn/helpers/ai-sdk` for scripted responses through `useChat`. Its sample data and transport stay in this wrapper, which is excluded from the registry item:
 
 <include meta='title="AIComposerDemo.tsx"'>../../../../packages/react/examples/AIComposerDemo.tsx</include>
