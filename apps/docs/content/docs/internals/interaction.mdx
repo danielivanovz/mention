@@ -1,0 +1,50 @@
+---
+title: Focus and ARIA
+description: Native textbox semantics, suggestion relationships, focus, and keyboard handling.
+---
+
+Mention keeps DOM focus in the editor while a suggestion is highlighted. The implementation connects that editor to a listbox and its active option. These are observable DOM relationships; they do not establish what every screen reader announces.
+
+The host supplies its text-editing semantics. A textarea keeps its implicit `textbox` role; the ProseMirror example supplies `role="textbox"` and `aria-multiline="true"` on its editable host. Mention adds the relationships to suggestions. It does not assign a combobox role or `aria-expanded` to a textarea. See the [accessibility guide](/docs/accessibility) for integration checks and manual verification limits.
+
+## Attributes follow the current session
+
+`getEditorProps()` supplies these attributes; `Mention.Input` applies them to its textarea. A rich-editor integration must apply and update them on its own host.
+
+| Attribute | Current behavior |
+| --- | --- |
+| `aria-haspopup` | `listbox` |
+| `aria-autocomplete` | `list` |
+| `aria-controls` | Listbox ID while open; omitted while closed |
+| `aria-activedescendant` | Highlighted option ID when an item exists; otherwise omitted |
+
+The popup receives `role="listbox"`, its generated ID, and `aria-busy` while loading. Each rendered option receives its generated ID, `role="option"`, and `aria-selected`. The first result is highlighted by default in a new session. An empty, loading, or failed result set has no active option.
+
+Render the list and its items with the matching props; conditionally removing the active item can break the ID relationship. Supply an accessible name for both the editor and the listbox. The core does not invent those labels.
+
+## Focus stays with the host
+
+Options are not additional tab stops by default. The primary mouse-down handler prevents the browser's focus change and attempts to commit the selected item. Mouse movement can update the highlight; a stationary pointer does not steal the initial highlight when the popup appears beneath it.
+
+Arrow navigation changes the highlight and reveals the active option by scrolling the listbox itself. It does not focus the option or scroll ancestor containers such as the page. [WAI-ARIA explicitly allows this relationship for a textbox](https://www.w3.org/TR/wai-aria-1.2/#aria-activedescendant): the focused textbox controls a listbox, and its active descendant is an option owned by that listbox.
+
+## Keys are handled conditionally
+
+Unmodified ArrowUp and ArrowDown wrap through available items. Enter or Tab commits only when there is a current item and the host snapshot is unchanged. A successful Tab commit prevents the browser's normal focus move; a later Tab without a selectable result can move focus normally. Escape dismisses the session without editing the text. Refreshing the unchanged snapshot keeps it dismissed. Once the text, caret, or region changes, that dismissal is cleared; returning to the original query can open suggestions again.
+
+The core leaves modified keys, already-prevented events, and composition keystrokes to the host. Consumer textarea key handlers run first and can prevent Mention's handling. Blur and outside pointer interaction close the session.
+
+The textarea integration pauses refresh during composition and rescans on composition end. A rich editor must expose composition state through its adapter and refresh when composition finishes. Synthetic event checks cannot reproduce an operating system's candidate window.
+
+## Evidence and remaining work
+
+Paths relative to `packages/react`:
+
+- `src/hooks/useMentionCore.ts`: attributes, event handling, focus dismissal, and commit guards.
+- `src/hooks/mouse-moving-guard.ts`: recent mouse movement tracking.
+- `e2e/contract.spec.ts`: runtime attribute relationships and keyboard focus.
+- `e2e/a11y.spec.ts`: unfiltered automated checks, with the long-list keyboard-scroll heuristic and body-portal landmark finding tracked explicitly.
+- `e2e/editing.spec.ts`: keyboard access to options beyond the visible scroll boundary.
+- `e2e/examples.spec.ts`: the actual composer and form, including validation, submission, reset, and focus.
+
+A DOM inspector or an axe pass cannot prove spoken output, reading order, or real IME usability. The current implementation still needs manual NVDA, JAWS, VoiceOver, and TalkBack verification in representative applications. Claims from the original prototype do not validate this implementation.

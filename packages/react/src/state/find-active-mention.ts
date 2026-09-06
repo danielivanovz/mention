@@ -41,7 +41,11 @@ const SOFT_BOUNDARY =
 
 function isWordBoundaryBefore(value: string, index: number): boolean {
   if (index === 0) return true;
-  const prev = value.charAt(index - 1);
+  const end = value.charCodeAt(index - 1);
+  const prev = value.slice(
+    end >= 0xdc00 && end <= 0xdfff ? index - 2 : index - 1,
+    index,
+  );
   if (/\s/.test(prev)) return true;
   if (SOFT_BOUNDARY.test(prev)) return true;
   return false;
@@ -68,6 +72,8 @@ export function findActiveMention(
   caret: number,
   trigger: string | readonly string[] = "@",
 ): ActiveMention | null {
+  if (!Number.isInteger(caret) || caret < 0 || caret > value.length)
+    return null;
   const triggers = typeof trigger === "string" ? [trigger] : trigger;
   if (triggers.length === 0) return null;
   for (let i = caret - 1; i >= 0; i--) {

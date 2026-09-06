@@ -1,14 +1,15 @@
 {
-  "title": "Docs",
+  "title": "Documentation",
   "pages": [
     "index",
+    "agents",
     "api-reference",
-    "---Recipes---",
+    "---Build your integration---",
     "recipes",
-    "---Integrations---",
-    "integrations",
-    "---Reference---",
+    "rich-text",
+    "---Verify and troubleshoot---",
     "accessibility",
-    "troubleshooting"
+    "troubleshooting",
+    "internals"
   ]
 }

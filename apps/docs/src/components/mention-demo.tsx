@@ -1,133 +1,177 @@
 "use client";
 
-// `@danielivanovz/mention` uses client React APIs (useState, useReducer, useEffect,
-// useId). Next 16 / RSC defaults components to server-rendered, so this
-// wrapper file carries the `"use client"` directive and is what MDX
-// imports — keeping the lib RSC-agnostic (no "use client" directive
-// shipped in the published package).
-//
-// Multi-trigger demo: three independent channels (@ people, # channels,
-// / commands) sharing one textarea + one popover. The library handles
-// channel switching as the dispatcher's backwards scan resolves a
-// different trigger char; consumers just declare the channels.
-
-import { Mention } from "@danielivanovz/mention";
+import { Mention, type MentionImperativeHandle } from "@danielivanov/mention";
+import { Trash2 } from "lucide-react";
+import { useRef, useState } from "react";
+import { flushSync } from "react-dom";
 
 interface Person {
   id: string;
+  name: string;
   username: string;
-  name: string;
+  initials: string;
 }
-interface Channel {
-  id: string;
-  name: string;
-  topic: string;
-}
-interface Command {
+interface Topic {
   id: string;
   name: string;
   description: string;
 }
-
-const PEOPLE: readonly Person[] = [
-  { id: "u1", username: "alice", name: "Alice Anderson" },
-  { id: "u2", username: "bob", name: "Bob Brennan" },
-  { id: "u3", username: "carol", name: "Carol Chen" },
-  { id: "u4", username: "dave", name: "Dave Davies" },
-  { id: "u5", username: "eve", name: "Eve Edwards" },
-  { id: "u6", username: "frank", name: "Frank Fischer" },
+const people: Person[] = [
+  {
+    id: "alice",
+    name: "Alice Chen",
+    username: "alice",
+    initials: "AC",
+  },
+  {
+    id: "jordan",
+    name: "Jordan Lee",
+    username: "jordan",
+    initials: "JL",
+  },
+  {
+    id: "sam",
+    name: "Sam Rivera",
+    username: "sam",
+    initials: "SR",
+  },
 ];
-const CHANNELS: readonly Channel[] = [
-  { id: "c1", name: "general", topic: "Anything goes" },
-  { id: "c2", name: "design", topic: "Design crit + critique" },
-  { id: "c3", name: "engineering", topic: "Code, infra, incidents" },
-  { id: "c4", name: "random", topic: "Off-topic" },
+const channels: Topic[] = [
+  { id: "design", name: "design", description: "Ideas taking shape" },
+  { id: "engineering", name: "engineering", description: "Making it work" },
+  { id: "general", name: "general", description: "A little of everything" },
 ];
-const COMMANDS: readonly Command[] = [
-  { id: "summarise", name: "summarise", description: "Summarise the thread" },
-  { id: "translate", name: "translate", description: "Translate to English" },
-  { id: "remind", name: "remind", description: "Set a reminder" },
-  { id: "poll", name: "poll", description: "Start a quick poll" },
+const commands: Topic[] = [
+  { id: "summarise", name: "summarise", description: "Find the main points" },
+  { id: "remind", name: "remind", description: "Come back to this later" },
+  { id: "poll", name: "poll", description: "Make a decision together" },
 ];
-
-// Hoisted to module scope so the prop reference is stable across
-// renders — the multi-trigger Root keys per-channel state on
-// Object.identity of the triggers record.
-const TRIGGERS = {
+const triggers = {
   "@": {
-    items: PEOPLE,
+    items: people,
     getKey: (p: Person) => p.id,
-    getLabel: (p: Person) => p.username,
+    getLabel: (p: Person) => p.name,
     getInsertText: (p: Person) => `@${p.username}`,
   },
   "#": {
-    items: CHANNELS,
-    getKey: (c: Channel) => c.id,
-    getLabel: (c: Channel) => c.name,
-    getInsertText: (c: Channel) => `#${c.name}`,
+    items: channels,
+    getKey: (t: Topic) => t.id,
+    getLabel: (t: Topic) => t.name,
   },
   "/": {
-    items: COMMANDS,
-    getKey: (c: Command) => c.id,
-    getLabel: (c: Command) => c.name,
-    getInsertText: (c: Command) => `/${c.name}`,
+    items: commands,
+    getKey: (t: Topic) => t.id,
+    getLabel: (t: Topic) => t.name,
   },
-} as const;
+};
 
 export function MentionDemo() {
+  const [value, setValue] = useState("");
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const handleRef = useRef<MentionImperativeHandle<Person | Topic>>(null);
+
+  function insertTrigger(trigger: string) {
+    const input = inputRef.current;
+    if (!input) return;
+    const start = input.selectionStart;
+    const end = input.selectionEnd;
+    const prefix = start > 0 && !/\s/u.test(value[start - 1]) ? " " : "";
+    const insertion = prefix + trigger;
+    flushSync(() =>
+      setValue(value.slice(0, start) + insertion + value.slice(end)),
+    );
+    input.focus();
+    input.setSelectionRange(start + insertion.length, start + insertion.length);
+    handleRef.current?.open();
+  }
+
   return (
-    <div className="my-6 rounded-lg border border-border-subtle bg-bg-elevated p-4">
-      <label
-        htmlFor="mention-demo-input"
-        className="mb-2 block font-mono text-meta text-fg-muted"
-      >
-        Composer
-      </label>
-      <Mention.Root<{ "@": Person; "#": Channel; "/": Command }>
-        triggers={TRIGGERS}
-        onSelect={() => {
-          /* demo: no side effect */
-        }}
-      >
-        <Mention.Input
-          id="mention-demo-input"
-          placeholder="Try @alice, #design, or /summarise"
-          rows={4}
-          className="w-full resize-none rounded-md border border-border-subtle bg-bg p-2.5 font-mono text-sm text-fg outline-none transition-colors focus-visible:border-fg-muted/50 focus-visible:ring-2 focus-visible:ring-accent-brand/30"
-        />
-        <Mention.Popover>
-          <Mention.Loading>Searching…</Mention.Loading>
-          {/* One typed list per channel — no runtime cast at the
-              consumer site. `<Mention.List<T> trigger="X">` only
-              renders while channel X is active, and the render-prop is
-              fully typed for X's item shape. */}
-          <Mention.List<Person> trigger="@">
-            {(p) => (
-              <Mention.Item value={p}>
-                <span>@{p.username}</span>
-                <span className="ml-3 text-fg-muted">{p.name}</span>
-              </Mention.Item>
-            )}
-          </Mention.List>
-          <Mention.List<Channel> trigger="#">
-            {(c) => (
-              <Mention.Item value={c}>
-                <span>#{c.name}</span>
-                <span className="ml-3 text-fg-muted">{c.topic}</span>
-              </Mention.Item>
-            )}
-          </Mention.List>
-          <Mention.List<Command> trigger="/">
-            {(c) => (
-              <Mention.Item value={c}>
-                <span>/{c.name}</span>
-                <span className="ml-3 text-fg-muted">{c.description}</span>
-              </Mention.Item>
-            )}
-          </Mention.List>
-          <Mention.Empty>Nothing found</Mention.Empty>
-        </Mention.Popover>
-      </Mention.Root>
-    </div>
+    <section
+      id="playground"
+      className="specimen-band"
+      aria-label="Live mention playground"
+    >
+      <div className="specimen">
+        <Mention.Root<{ "@": Person; "#": Topic; "/": Topic }>
+          triggers={triggers}
+          handleRef={handleRef}
+        >
+          <div className="specimen-heading">
+            <label htmlFor="playground-input">Try it. Type @, #, or /</label>
+            <span>Sample data</span>
+          </div>
+          <Mention.Input
+            ref={inputRef}
+            id="playground-input"
+            aria-describedby="playground-help"
+            value={value}
+            onChange={(event) => setValue(event.target.value)}
+            placeholder="Bring @someone into the conversation."
+            rows={3}
+            spellCheck={false}
+          />
+          <div className="specimen-toolbar">
+            <fieldset aria-label="Insert a trigger" className="trigger-buttons">
+              <button type="button" onClick={() => insertTrigger("@")}>
+                <span aria-hidden="true">@</span> People
+              </button>
+              <button type="button" onClick={() => insertTrigger("#")}>
+                <span aria-hidden="true">#</span> Channels
+              </button>
+              <button type="button" onClick={() => insertTrigger("/")}>
+                <span aria-hidden="true">/</span> Commands
+              </button>
+            </fieldset>
+            <button
+              className="clear-specimen"
+              type="button"
+              onClick={() => {
+                setValue("");
+                handleRef.current?.close();
+                inputRef.current?.focus();
+              }}
+            >
+              <Trash2 size={19} aria-hidden="true" /> Clear
+            </button>
+            <p id="playground-help">
+              Arrow keys to browse. Enter to select. Esc to close.
+            </p>
+          </div>
+          <Mention.Popover
+            className="specimen-popover"
+            aria-label="Suggestions"
+          >
+            <Mention.List<Person> trigger="@">
+              {(person) => (
+                <Mention.Item value={person} className="specimen-option">
+                  <span className="person-avatar" aria-hidden="true">
+                    {person.initials}
+                  </span>
+                  <span className="option-description">
+                    <strong>{person.name}</strong>
+                  </span>
+                </Mention.Item>
+              )}
+            </Mention.List>
+            {(["#", "/"] as const).map((trigger) => (
+              <Mention.List<Topic> trigger={trigger} key={trigger}>
+                {(topic) => (
+                  <Mention.Item value={topic} className="specimen-option">
+                    <span className="topic-symbol" aria-hidden="true">
+                      {trigger}
+                    </span>
+                    <span className="option-description">
+                      <strong>{topic.name}</strong>
+                      <span>{topic.description}</span>
+                    </span>
+                  </Mention.Item>
+                )}
+              </Mention.List>
+            ))}
+            <Mention.Empty>No matches. Try a shorter search.</Mention.Empty>
+          </Mention.Popover>
+        </Mention.Root>
+      </div>
+    </section>
   );
 }

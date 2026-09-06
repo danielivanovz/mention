@@ -1,0 +1,446 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-06T16:47:47.091777+00:00",
+  "title": "Design System: Mention",
+  "extensions": {
+    "colorMeta": {
+      "ink": {
+        "role": "primary",
+        "displayName": "Foundry Ink",
+        "tonalRamp": [
+          "oklch(15.00% 0.07028 257.866)",
+          "oklch(26.43% 0.07028 257.866)",
+          "oklch(37.86% 0.07028 257.866)",
+          "oklch(49.29% 0.07028 257.866)",
+          "oklch(60.71% 0.07028 257.866)",
+          "oklch(72.14% 0.07028 257.866)",
+          "oklch(83.57% 0.07028 257.866)",
+          "oklch(95.00% 0.07028 257.866)"
+        ]
+      },
+      "proof": {
+        "role": "primary",
+        "displayName": "Blue Proof",
+        "tonalRamp": [
+          "oklch(15.00% 0.03022 232.437)",
+          "oklch(26.43% 0.03022 232.437)",
+          "oklch(37.86% 0.03022 232.437)",
+          "oklch(49.29% 0.03022 232.437)",
+          "oklch(60.71% 0.03022 232.437)",
+          "oklch(72.14% 0.03022 232.437)",
+          "oklch(83.57% 0.03022 232.437)",
+          "oklch(95.00% 0.03022 232.437)"
+        ]
+      },
+      "pink": {
+        "role": "secondary",
+        "displayName": "Context Pink",
+        "tonalRamp": [
+          "oklch(15.00% 0.17417 5.805)",
+          "oklch(26.43% 0.17417 5.805)",
+          "oklch(37.86% 0.17417 5.805)",
+          "oklch(49.29% 0.17417 5.805)",
+          "oklch(60.71% 0.17417 5.805)",
+          "oklch(72.14% 0.17417 5.805)",
+          "oklch(83.57% 0.17417 5.805)",
+          "oklch(95.00% 0.17417 5.805)"
+        ]
+      },
+      "pink-inset": {
+        "role": "secondary",
+        "displayName": "Pink Inset",
+        "tonalRamp": [
+          "oklch(15.00% 0.06397 1.273)",
+          "oklch(26.43% 0.06397 1.273)",
+          "oklch(37.86% 0.06397 1.273)",
+          "oklch(49.29% 0.06397 1.273)",
+          "oklch(60.71% 0.06397 1.273)",
+          "oklch(72.14% 0.06397 1.273)",
+          "oklch(83.57% 0.06397 1.273)",
+          "oklch(95.00% 0.06397 1.273)"
+        ]
+      },
+      "bg": {
+        "role": "neutral",
+        "displayName": "Cool Sheet",
+        "tonalRamp": [
+          "oklch(15.00% 0.00793 253.852)",
+          "oklch(26.43% 0.00793 253.852)",
+          "oklch(37.86% 0.00793 253.852)",
+          "oklch(49.29% 0.00793 253.852)",
+          "oklch(60.71% 0.00793 253.852)",
+          "oklch(72.14% 0.00793 253.852)",
+          "oklch(83.57% 0.00793 253.852)",
+          "oklch(95.00% 0.00793 253.852)"
+        ]
+      },
+      "bg-elevated": {
+        "role": "neutral",
+        "displayName": "Raised Sheet",
+        "tonalRamp": [
+          "oklch(15.00% 0.01487 251.159)",
+          "oklch(26.43% 0.01487 251.159)",
+          "oklch(37.86% 0.01487 251.159)",
+          "oklch(49.29% 0.01487 251.159)",
+          "oklch(60.71% 0.01487 251.159)",
+          "oklch(72.14% 0.01487 251.159)",
+          "oklch(83.57% 0.01487 251.159)",
+          "oklch(95.00% 0.01487 251.159)"
+        ]
+      },
+      "fg-muted": {
+        "role": "neutral",
+        "displayName": "Muted Ink",
+        "tonalRamp": [
+          "oklch(15.00% 0.04938 254.066)",
+          "oklch(26.43% 0.04938 254.066)",
+          "oklch(37.86% 0.04938 254.066)",
+          "oklch(49.29% 0.04938 254.066)",
+          "oklch(60.71% 0.04938 254.066)",
+          "oklch(72.14% 0.04938 254.066)",
+          "oklch(83.57% 0.04938 254.066)",
+          "oklch(95.00% 0.04938 254.066)"
+        ]
+      },
+      "border-subtle": {
+        "role": "neutral",
+        "displayName": "Sheet Boundary",
+        "tonalRamp": [
+          "oklch(15.00% 0.03005 252.972)",
+          "oklch(26.43% 0.03005 252.972)",
+          "oklch(37.86% 0.03005 252.972)",
+          "oklch(49.29% 0.03005 252.972)",
+          "oklch(60.71% 0.03005 252.972)",
+          "oklch(72.14% 0.03005 252.972)",
+          "oklch(83.57% 0.03005 252.972)",
+          "oklch(95.00% 0.03005 252.972)"
+        ]
+      },
+      "focus": {
+        "role": "neutral",
+        "displayName": "Focus Ink",
+        "tonalRamp": [
+          "oklch(15.00% 0.15970 6.613)",
+          "oklch(26.43% 0.15970 6.613)",
+          "oklch(37.86% 0.15970 6.613)",
+          "oklch(49.29% 0.15970 6.613)",
+          "oklch(60.71% 0.15970 6.613)",
+          "oklch(72.14% 0.15970 6.613)",
+          "oklch(83.57% 0.15970 6.613)",
+          "oklch(95.00% 0.15970 6.613)"
+        ]
+      },
+      "dark-bg": {
+        "role": "neutral",
+        "displayName": "Dark Sheet",
+        "tonalRamp": [
+          "oklch(15.00% 0.05276 256.873)",
+          "oklch(26.43% 0.05276 256.873)",
+          "oklch(37.86% 0.05276 256.873)",
+          "oklch(49.29% 0.05276 256.873)",
+          "oklch(60.71% 0.05276 256.873)",
+          "oklch(72.14% 0.05276 256.873)",
+          "oklch(83.57% 0.05276 256.873)",
+          "oklch(95.00% 0.05276 256.873)"
+        ]
+      },
+      "dark-bg-elevated": {
+        "role": "neutral",
+        "displayName": "Dark Raised Sheet",
+        "tonalRamp": [
+          "oklch(15.00% 0.06148 254.782)",
+          "oklch(26.43% 0.06148 254.782)",
+          "oklch(37.86% 0.06148 254.782)",
+          "oklch(49.29% 0.06148 254.782)",
+          "oklch(60.71% 0.06148 254.782)",
+          "oklch(72.14% 0.06148 254.782)",
+          "oklch(83.57% 0.06148 254.782)",
+          "oklch(95.00% 0.06148 254.782)"
+        ]
+      },
+      "dark-fg": {
+        "role": "neutral",
+        "displayName": "Dark Reading Text",
+        "tonalRamp": [
+          "oklch(15.00% 0.01828 250.590)",
+          "oklch(26.43% 0.01828 250.590)",
+          "oklch(37.86% 0.01828 250.590)",
+          "oklch(49.29% 0.01828 250.590)",
+          "oklch(60.71% 0.01828 250.590)",
+          "oklch(72.14% 0.01828 250.590)",
+          "oklch(83.57% 0.01828 250.590)",
+          "oklch(95.00% 0.01828 250.590)"
+        ]
+      },
+      "dark-fg-muted": {
+        "role": "neutral",
+        "displayName": "Dark Muted Text",
+        "tonalRamp": [
+          "oklch(15.00% 0.04165 250.628)",
+          "oklch(26.43% 0.04165 250.628)",
+          "oklch(37.86% 0.04165 250.628)",
+          "oklch(49.29% 0.04165 250.628)",
+          "oklch(60.71% 0.04165 250.628)",
+          "oklch(72.14% 0.04165 250.628)",
+          "oklch(83.57% 0.04165 250.628)",
+          "oklch(95.00% 0.04165 250.628)"
+        ]
+      },
+      "dark-border-subtle": {
+        "role": "neutral",
+        "displayName": "Dark Sheet Boundary",
+        "tonalRamp": [
+          "oklch(15.00% 0.05647 251.710)",
+          "oklch(26.43% 0.05647 251.710)",
+          "oklch(37.86% 0.05647 251.710)",
+          "oklch(49.29% 0.05647 251.710)",
+          "oklch(60.71% 0.05647 251.710)",
+          "oklch(72.14% 0.05647 251.710)",
+          "oklch(83.57% 0.05647 251.710)",
+          "oklch(95.00% 0.05647 251.710)"
+        ]
+      },
+      "dark-focus": {
+        "role": "neutral",
+        "displayName": "Dark Focus",
+        "tonalRamp": [
+          "oklch(15.00% 0.10200 356.678)",
+          "oklch(26.43% 0.10200 356.678)",
+          "oklch(37.86% 0.10200 356.678)",
+          "oklch(49.29% 0.10200 356.678)",
+          "oklch(60.71% 0.10200 356.678)",
+          "oklch(72.14% 0.10200 356.678)",
+          "oklch(83.57% 0.10200 356.678)",
+          "oklch(95.00% 0.10200 356.678)"
+        ]
+      },
+      "dark-pink": {
+        "role": "secondary",
+        "displayName": "Dark Context Pink",
+        "tonalRamp": [
+          "oklch(15.00% 0.14429 4.001)",
+          "oklch(26.43% 0.14429 4.001)",
+          "oklch(37.86% 0.14429 4.001)",
+          "oklch(49.29% 0.14429 4.001)",
+          "oklch(60.71% 0.14429 4.001)",
+          "oklch(72.14% 0.14429 4.001)",
+          "oklch(83.57% 0.14429 4.001)",
+          "oklch(95.00% 0.14429 4.001)"
+        ]
+      },
+      "dark-pink-inset": {
+        "role": "secondary",
+        "displayName": "Dark Pink Inset",
+        "tonalRamp": [
+          "oklch(15.00% 0.07333 359.119)",
+          "oklch(26.43% 0.07333 359.119)",
+          "oklch(37.86% 0.07333 359.119)",
+          "oklch(49.29% 0.07333 359.119)",
+          "oklch(60.71% 0.07333 359.119)",
+          "oklch(72.14% 0.07333 359.119)",
+          "oklch(83.57% 0.07333 359.119)",
+          "oklch(95.00% 0.07333 359.119)"
+        ]
+      },
+      "dark-host-ground": {
+        "role": "neutral",
+        "displayName": "Dark Editing Host Ground",
+        "tonalRamp": [
+          "oklch(15.00% 0.06227 249.234)",
+          "oklch(26.43% 0.06227 249.234)",
+          "oklch(37.86% 0.06227 249.234)",
+          "oklch(49.29% 0.06227 249.234)",
+          "oklch(60.71% 0.06227 249.234)",
+          "oklch(72.14% 0.06227 249.234)",
+          "oklch(83.57% 0.06227 249.234)",
+          "oklch(95.00% 0.06227 249.234)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Foundry Display",
+        "purpose": "Wordmarks and principal headings; page composition determines scale."
+      },
+      "title": {
+        "displayName": "Content Titles",
+        "purpose": "Repeated recipe titles; article subheadings use the reading family with a heavier weight."
+      },
+      "body": {
+        "displayName": "Ordinary Reading",
+        "purpose": "Default text and explanations."
+      },
+      "reading": {
+        "displayName": "Article Reading",
+        "purpose": "Long-form documentation and coding-agent guidance."
+      },
+      "label": {
+        "displayName": "Control Labels",
+        "purpose": "Primary, secondary, and article utility actions."
+      },
+      "code": {
+        "displayName": "Literal Code",
+        "purpose": "Commands, inline code, and source blocks."
+      }
+    },
+    "shadows": [
+      {
+        "name": "specimen-popup",
+        "value": "0 6px 24px #071c3433",
+        "purpose": "Soft separation for the live landing suggestion overlay."
+      },
+      {
+        "name": "library-popup",
+        "value": "0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.08)",
+        "purpose": "Optional library stylesheet used by documentation examples."
+      },
+      {
+        "name": "library-popup-system-dark",
+        "value": "0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.6)",
+        "purpose": "Optional library popup shadow under prefers-color-scheme: dark."
+      }
+    ],
+    "motion": [
+      {
+        "name": "copy-feedback",
+        "value": "2400ms",
+        "purpose": "Clipboard success returns to idle; feedback timing, not an animation duration."
+      },
+      {
+        "name": "reduced-motion-duration",
+        "value": "0s",
+        "purpose": "Global reduced-motion override removes animation and transition duration."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "wide-host-inset",
+        "value": "1600px"
+      },
+      {
+        "name": "host-stack",
+        "value": "1100px"
+      },
+      {
+        "name": "landing-mobile",
+        "value": "760px"
+      },
+      {
+        "name": "compact-nav",
+        "value": "600px"
+      },
+      {
+        "name": "narrow-nav",
+        "value": "370px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary action",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Filled foreground action; shown at its landing size.",
+      "html": "<a class=\"ds-primary\" href=\"/docs\">Start building <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M5 12h14m-7-7 7 7-7 7\"/></svg></a>",
+      "css": ".ds-primary{display:flex;align-items:center;justify-content:center;gap:.75rem;border:1px solid var(--fg,#172f52);border-radius:var(--radius,.375rem);min-height:4.6rem;padding:.8rem 1rem;font-size:clamp(1rem,1.45vw,1.4rem);font-weight:500;line-height:1.3;text-align:center;text-decoration:none;font-family:var(--font-body,\"Archivo\"),sans-serif;background:var(--fg,#172f52);color:var(--bg,#f3f7fc)}.ds-primary:hover{background:var(--fg-muted,#4a5f79)}.ds-primary:focus-visible{outline:2px solid var(--focus,#9c214a);outline-offset:4px;}.ds-primary svg{width:1.4rem;height:1.4rem;flex-shrink:0}@media(max-width:760px){.ds-primary{min-height:3.75rem;font-size:.9rem;gap:.35rem;padding:.6rem}.ds-primary svg{width:1rem}}"
+    },
+    {
+      "name": "Secondary action",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Outlined companion action; shared flat geometry.",
+      "html": "<a class=\"ds-secondary\" href=\"/docs/agents\">Build with an agent <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M5 12h14m-7-7 7 7-7 7\"/></svg></a>",
+      "css": ".ds-secondary{display:flex;align-items:center;justify-content:center;gap:.75rem;border:1px solid var(--fg,#172f52);border-radius:var(--radius,.375rem);min-height:4.6rem;padding:.8rem 1rem;font-size:clamp(1rem,1.45vw,1.4rem);font-weight:500;line-height:1.3;text-align:center;text-decoration:none;font-family:var(--font-body,\"Archivo\"),sans-serif;background:transparent;color:var(--fg,#172f52)}.ds-secondary:hover{background:var(--bg-elevated,#e6eef7)}.ds-secondary:focus-visible{outline:2px solid var(--focus,#9c214a);outline-offset:4px;}.ds-secondary svg{width:1.4rem;height:1.4rem;flex-shrink:0}@media(max-width:760px){.ds-secondary{min-height:3.75rem;font-size:.9rem;gap:.35rem;padding:.6rem}.ds-secondary svg{width:1rem}}"
+    },
+    {
+      "name": "Article action",
+      "kind": "button",
+      "refersTo": "docs-action",
+      "description": "Compact article utility for focused Markdown retrieval.",
+      "html": "<a class=\"ds-docs-action\" href=\"/llms.mdx/docs/content.md\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z\"/><path d=\"M14 2v6h6M8 13h8M8 17h8\"/></svg> Markdown</a>",
+      "css": ".ds-docs-action{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;min-height:2.75rem;border:1px solid var(--border-subtle,#bdccde);border-radius:var(--radius,.375rem);background:var(--bg,#f3f7fc);padding:.5rem .75rem;color:var(--fg,#172f52);font-size:.8125rem;font-weight:500;text-decoration:none;font-family:var(--font-body,\"Archivo\"),sans-serif;}.ds-docs-action:hover{background:var(--bg-elevated,#e6eef7)}.ds-docs-action:focus-visible{outline:2px solid var(--focus,#9c214a);outline-offset:4px;}.ds-docs-action svg{width:14px;height:14px}"
+    },
+    {
+      "name": "Writing field",
+      "kind": "input",
+      "refersTo": "textarea",
+      "description": "The labeled working field in the landing specimen, without a simulated suggestion engine.",
+      "html": "<div class=\"ds-field\"><label for=\"ds-specimen-input\">Try it. Type @, #, or /</label><textarea id=\"ds-specimen-input\" placeholder=\"Bring @someone into the conversation.\"></textarea></div>",
+      "css": ".ds-field{padding:1rem 1.5rem .75rem;border-radius:var(--radius,.375rem);background:var(--pink-inset,#fac4d2);color:var(--ink,#172f52);font-family:var(--font-body,\"Archivo\"),sans-serif;}.ds-field label{display:block;margin-bottom:.625rem;font-size:clamp(1.125rem,1.6vw,1.6rem);font-weight:650;letter-spacing:-.02em}.ds-field textarea{display:block;width:100%;min-height:13rem;padding:1.125rem 1.375rem;border:1px solid var(--ink,#172f52);border-radius:var(--radius,.375rem);background:var(--bg,#f3f7fc);color:var(--fg,#172f52);font-size:clamp(1.375rem,2vw,2rem);line-height:1.5;resize:vertical;caret-color:#9c214a;font-family:var(--font-body,\"Archivo\"),sans-serif;}.ds-field textarea::placeholder{color:var(--fg-muted,#4a5f79);opacity:1}.ds-field textarea:focus-visible{outline:2px solid var(--ink,#172f52);outline-offset:3px}@media(max-width:760px){.ds-field{padding:.8rem}.ds-field label{font-size:1rem}.ds-field textarea{min-height:12.5rem;padding:.9rem;font-size:1.375rem}}"
+    },
+    {
+      "name": "Main navigation",
+      "kind": "nav",
+      "refersTo": "navigation",
+      "description": "Persistent ink header shared by landing and docs. The compact material preview omits live search and theme behavior.",
+      "html": "<header class=\"ds-header\"><a class=\"ds-brand\" href=\"/\" aria-label=\"Mention home\">mention</a><nav class=\"ds-nav\" aria-label=\"Main navigation\"><a href=\"/#playground\">Playground</a><a href=\"/docs\">Docs</a><a href=\"https://github.com/danielivanovz/mention\">GitHub</a></nav></header>",
+      "css": ".ds-header{display:flex;align-items:center;justify-content:space-between;gap:1rem;min-height:4rem;padding:0 var(--page-inset,clamp(1.25rem,2.4vw,3rem));background:var(--ink,#172f52);color:var(--proof,#cfe6f3);border-bottom:1px solid #3c5270;font-family:var(--font-body,\"Archivo\"),sans-serif;}.ds-header a{color:inherit;text-decoration:none}.ds-brand{font-family:var(--font-display,\"Archivo Black\"),sans-serif;font-size:1.8rem;letter-spacing:-.04em;line-height:1}.ds-nav{display:flex;align-items:center;gap:clamp(.25rem,2vw,2rem)}.ds-nav a{display:inline-flex;align-items:center;min-height:2.75rem;padding:.3rem;font-size:1rem}.ds-header a:hover{color:#fff}.ds-header a:focus-visible{outline:2px solid var(--proof,#cfe6f3);outline-offset:4px}@media(max-width:600px){.ds-header{gap:.5rem}.ds-brand{font-size:1.5rem}.ds-nav{gap:.2rem}.ds-nav a{font-size:.8125rem}}"
+    },
+    {
+      "name": "Editing-host choice",
+      "kind": "card",
+      "refersTo": "host-choice",
+      "description": "Outlined destination with a quiet mixed-sheet fill.",
+      "html": "<a class=\"ds-host-choice\" href=\"/docs/integrations/rich-text\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z\"/><path d=\"M14 2v6h6M8 13h8M8 17h8\"/></svg><span>Rich editor</span><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M5 12h14m-7-7 7 7-7 7\"/></svg></a>",
+      "css": ".ds-host-choice{display:flex;gap:1rem;align-items:center;justify-content:center;padding:1.5rem 1.25rem;min-height:6.75rem;border:1px solid var(--fg,#172f52);border-radius:var(--radius,.375rem);background:color-mix(in srgb,var(--bg,#f3f7fc) 45%,transparent);color:var(--fg,#172f52);font-size:clamp(1rem,1.45vw,1.4rem);text-decoration:none;font-family:var(--font-body,\"Archivo\"),sans-serif;}.ds-host-choice:hover{background:var(--bg,#f3f7fc)}.ds-host-choice:focus-visible{outline:2px solid var(--focus,#9c214a);outline-offset:4px;}.ds-host-choice svg{flex-shrink:0}.ds-host-choice svg:first-child{width:2.5rem;height:2.5rem;stroke-width:1.7}.ds-host-choice svg:last-child{width:1.4rem;height:1.4rem;margin-left:auto}@media(max-width:760px){.ds-host-choice{min-height:5rem;padding:1rem}.ds-host-choice svg:first-child{width:2rem;height:2rem}}"
+    },
+    {
+      "name": "People suggestions",
+      "kind": "custom",
+      "refersTo": "suggestion-popup",
+      "description": "Selected-state appearance. Live pointer and keyboard state is supplied by Mention; no independent CSS hover highlight.",
+      "html": "<div class=\"ds-popup\" role=\"listbox\" aria-label=\"Suggestions\"><div class=\"ds-option\" role=\"option\" aria-selected=\"true\"><span class=\"ds-avatar\" aria-hidden=\"true\">AC</span><strong>Alice Chen</strong></div><div class=\"ds-option\" role=\"option\" aria-selected=\"false\"><span class=\"ds-avatar\" aria-hidden=\"true\">JL</span><strong>Jordan Lee</strong></div><div class=\"ds-option\" role=\"option\" aria-selected=\"false\"><span class=\"ds-avatar\" aria-hidden=\"true\">SR</span><strong>Sam Rivera</strong></div></div>",
+      "css": ".ds-popup{width:18rem;max-width:calc(100vw - 2rem);padding:.3rem;border:0;border-radius:var(--radius,.375rem);background:var(--bg,#f3f7fc);color:var(--fg,#172f52);box-shadow:0 6px 24px #071c3433;font-family:var(--font-body,\"Archivo\"),sans-serif;}.ds-option{display:flex;gap:.75rem;align-items:center;min-height:2.75rem;padding:.3rem .6rem;border-radius:.25rem;cursor:pointer;user-select:none;outline:none}.ds-option strong{font-size:1rem;font-weight:550;line-height:1.35}.ds-avatar{display:grid;place-items:center;flex:0 0 2.125rem;height:2.125rem;border-radius:50%;background:#172f52;color:#f3f7fc;font-size:.75rem;font-weight:650}.ds-option[aria-selected=\"true\"]{background:#fac4d2;color:#172f52}.ds-option[aria-selected=\"true\"] .ds-avatar{background:#a02a52}"
+    },
+    {
+      "name": "Installation copy control",
+      "kind": "custom",
+      "refersTo": "copy-control",
+      "description": "Selectable command and 44px named control. The shared React control awaits clipboard completion; success does not shift layout and errors provide local manual-copy guidance.",
+      "html": "<div class=\"ds-install\"><code>bun add @danielivanov/mention</code><button class=\"ds-copy\" type=\"button\" aria-label=\"Copy bun add @danielivanov/mention\" title=\"Copy install command\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"9\" y=\"9\" width=\"13\" height=\"13\" rx=\"2\"/><path d=\"M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1\"/></svg></button></div>",
+      "css": ".ds-install{display:flex;align-items:center;gap:.65rem;min-height:4.6rem;padding:.8rem 1.5rem;background:var(--bg-elevated,#e6eef7);color:var(--fg,#172f52);border:1px solid var(--border-subtle,#bdccde);border-radius:var(--radius,.375rem)}.ds-install code{font-family:var(--font-code,\"JetBrains Mono\"),monospace;font-size:clamp(.8125rem,1.4vw,1.375rem);overflow-wrap:anywhere}.ds-copy{display:grid;place-items:center;margin-left:auto;min-width:2.75rem;min-height:2.75rem;padding:0;border:0;border-radius:.25rem;background:transparent;color:inherit;cursor:pointer}.ds-copy:hover{background:var(--border-subtle,#bdccde)}.ds-copy:focus-visible{outline:2px solid var(--focus,#9c214a);outline-offset:4px;}.ds-copy svg{width:1.4rem;height:1.4rem}@media(max-width:760px){.ds-install{min-height:3.75rem;padding-inline:1rem}.ds-install code{font-size:clamp(.8rem,3vw,1rem)}}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Type foundry proof",
+    "overview": "Mention uses broad, heavy type and solid ink fields to make writing itself the visual material. Navy, proof blue, context pink, and a cool sheet ground give the interface a recognizable identity without ornamental imagery. Real text, an editable caret, and working suggestions supply the detail.\n\nThe system covers the website in `apps/docs`, including documentation and agent onboarding. The same type families, semantic theme colors, control geometry, and visible interaction states connect these surfaces. Page density and composition follow each reading or interaction task; the Ink Block landing arrangement belongs to the [surface brief](.impeccable/surfaces/src-app-home-page-tsx.md), not to every future page.",
+    "keyCharacteristics": [
+      "Heavy Archivo Black display paired with ordinary Archivo reading text.",
+      "Solid navy, blue, pink, and sheet regions with clear tonal boundaries.",
+      "Flat rectangular controls, modest corners, and identifying strokes.",
+      "Real writing and selection states; motion follows interaction.",
+      "Shared visual materials across human documentation and agent guidance."
+    ],
+    "rules": [
+      {
+        "name": "The Ink and Sheet Rule",
+        "body": "Use the semantic foreground/background pair for reading and controls; use fixed ink/proof pairs for the inverse brand regions.",
+        "section": "colors"
+      },
+      {
+        "name": "The Two Voices Rule",
+        "body": "Archivo Black names and introduces; Archivo explains and operates. Reserve JetBrains Mono for literal code and commands.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Surface Rule",
+        "body": "Separate resting content with tone and borders; use soft depth only for active overlays.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do use semantic theme variables for sheet surfaces, reading text, borders, and ordinary controls.",
+      "Do keep the heavy display face distinct from the reading and control face.",
+      "Do use flat grounds, identifying strokes, and the established control corners.",
+      "Do preserve visible labels, focus, selected states, and wrapping at narrow widths.",
+      "Do present agent guidance with the same visual materials and maintained article structure as human documentation."
+    ],
+    "donts": [
+      "Don't turn the landing wordmark scale or color-band order into a requirement for documentation pages.",
+      "Don't add gradients, simulated surface lighting, or decorative resting-card shadows to this solid-ink world.",
+      "Don't replace the editable specimen or its real suggestion state with a raster image.",
+      "Don't use mono text, trigger characters, or code syntax colors as generic decoration; the existing trigger characters denote literal inputs.",
+      "Don't treat circular avatars or the inherited theme switch as a reason to make every control a pill."
+    ]
+  }
+}

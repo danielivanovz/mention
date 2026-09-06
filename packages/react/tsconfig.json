@@ -28,6 +28,6 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "include": ["src", "e2e", "vitest.config.ts", "vitest.setup.ts"],
-  "exclude": ["dist", "node_modules", "src/registry"]
+  "include": ["src", "e2e", "examples", "vitest.config.ts", "vitest.setup.ts"],
+  "exclude": ["dist", "node_modules"]
 }

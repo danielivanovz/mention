@@ -1,45 +1,35 @@
-# docs
+# Mention website
 
-This is a Next.js application generated with
-[Create Fumadocs](https://github.com/fuma-nama/fumadocs).
+The landing page and docs share a Next.js/Fumadocs application. Library examples import the workspace package through its published entry point; build the library from the repository root before starting the site.
 
-Run development server:
+From this directory:
 
-```bash
-npm run dev
-# or
-pnpm dev
-# or
-yarn dev
+```sh
+bun run dev
+bun run types:check
+bun run build
 ```
 
-Open http://localhost:3000 with your browser to see the result.
+Open the address printed by the development server. Use Next's `--port` option when another local service already uses the default port.
 
-## Explore
+## Site addresses
 
-In the project, you can see:
+All navigation and browser copy actions use relative paths or the current browser origin. The Markdown routes, `/llms.txt`, and `/llms-full.txt` generate absolute links from each request, so one build can serve a different local port or preview address without stale agent links. These text responses are rendered per request; documentation HTML remains statically generated.
 
-- `lib/source.ts`: Code for content source adapter, [`loader()`](https://fumadocs.dev/docs/headless/source-api) provides the interface to access your content.
-- `lib/layout.shared.tsx`: Shared options for layouts, optional but preferred to keep.
+Static canonical and Open Graph metadata need an origin at build time:
 
-| Route                     | Description                                            |
-| ------------------------- | ------------------------------------------------------ |
-| `app/(home)`              | The route group for your landing page and other pages. |
-| `app/docs`                | The documentation layout and pages.                    |
-| `app/api/search/route.ts` | The Route Handler for search.                          |
+- Set `NEXT_PUBLIC_SITE_URL` to an absolute website URL to override automatic discovery.
+- Vercel previews use `VERCEL_URL` by default. Production uses `VERCEL_PROJECT_PRODUCTION_URL`, falling back to `VERCEL_URL`.
+- Without either setting, absolute canonical and Open Graph image metadata are omitted. There is no fallback development hostname in site code.
 
-### Fumadocs MDX
+Set `NEXT_PUBLIC_GIT_REF` or provide `VERCEL_GIT_COMMIT_SHA` to show source links to the matching revision. Unpushed work does not link to an assumed remote branch.
 
-A `source.config.ts` config file has been included, you can customise different options like frontmatter schema.
+## Content
 
-Read the [Introduction](https://fumadocs.dev/docs/mdx) for further details.
+`content/docs` is the shared source for browser articles, search, Markdown, and coding-agent prompts. Internals live in `content/docs/internals`, alongside integration and verification guides. The former `/internals` URLs redirect to their docs equivalents.
 
-## Learn More
-
-To learn more about Next.js and Fumadocs, take a look at the following
-resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js
-  features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-- [Fumadocs](https://fumadocs.dev) - learn about Fumadocs
+- `src/components/site-header.tsx`: shared navigation.
+- `src/lib/source.ts`: article loading and Markdown export.
+- `src/lib/site.ts`: deployment metadata origin and URL construction.
+- `src/lib/agent-prompt.ts`: the setup prompt, using the current browser origin.
+- `src/proxy.ts`: explicit `.mdx` aliases for the Markdown routes.

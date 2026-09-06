@@ -1,16 +1,18 @@
 ---
 title: Custom rendering
-description: Render-props inside <Mention.Item>, and the useMention() escape hatch for non-listbox layouts.
+description: Customize option content or use the hook for application-owned layout and positioning.
 ---
 
-Most consumers can stay inside the compound API and pass children to `<Mention.Item>`. When you need full layout control — splitting the input from the popover, rendering the listbox as a grid, integrating with a different popover primitive — drop down to `useMention()`.
+Most consumers can stay inside the compound API and pass children to `<Mention.Item>`. Use `useMention()` when your application needs to own popup layout and positioning. Its prop getters retain the listbox and option roles; a different interaction pattern needs its own accessibility design.
+
+In Next.js App Router, place render functions and hook-based examples inside a component with a `"use client"` boundary.
 
 ## Rich item content
 
 `<Mention.Item>` accepts arbitrary children. Avatar + name + handle is the canonical layout:
 
 ```tsx
-<Mention.List>
+<Mention.List<User>>
   {(u) => (
     <Mention.Item value={u}>
       <img src={u.avatar} alt="" className="size-6 rounded-full" />
@@ -28,7 +30,7 @@ The library applies `role="option"`, `id`, hover handlers, and `aria-selected` o
 The render-prop is just a function — interleave any non-`Mention.Item` JSX freely:
 
 ```tsx
-<Mention.List>
+<Mention.List<User>>
   {(u, i) => (
     <>
       {i === 0 || u.team !== items[i - 1].team ? (
@@ -42,37 +44,56 @@ The render-prop is just a function — interleave any non-`Mention.Item` JSX fre
 </Mention.List>
 ```
 
-`role="presentation"` keeps the AT contract pristine — only `<Mention.Item>` is exposed as an option to screen readers.
+The heading is not an option. Its text can still be exposed to assistive technology; verify custom grouping and reading order in your application. Compare adjacent items from the current filtered results, not an unfiltered source array.
 
 ## Escape hatch — `useMention()`
 
 When `<Mention.Popover>`'s default container doesn't fit (you're building a sticky bottom bar, or wrapping in your own design-system Popover), pull the props directly:
 
 ```tsx
-import { useMention } from "@danielivanovz/mention";
+"use client";
+
+import { useMention } from "@danielivanov/mention";
+
+type User = { id: string; name: string };
+const users: User[] = [
+  { id: "alice", name: "Alice" },
+  { id: "bob", name: "Bob" },
+];
 
 export function CustomMention() {
   const m = useMention<User>({
     items: users,
     getKey: (u) => u.id,
     getLabel: (u) => u.name,
-    onSelect: (u) => console.log(u),
   });
 
   return (
-    <div className="relative">
+    <div style={{ position: "relative" }}>
       <textarea {...m.getInputProps()} aria-label="Message" />
       {m.open ? (
-        <ul {...m.getPopoverProps()} className="absolute mt-1 …">
+        <div
+          {...m.getPopoverProps()}
+          aria-label="People"
+          style={{ position: "absolute", top: "100%", left: 0 }}
+        >
           {m.items.map((u, i) => (
-            <li
+            <div
               key={u.id} // ← required; getItemProps doesn't include `key`
               {...m.getItemProps(u, i)}
+              style={{
+                padding: "0.5rem",
+                background: i === m.highlightedIndex ? "Highlight" : "Canvas",
+                color: i === m.highlightedIndex ? "HighlightText" : "CanvasText",
+              }}
             >
               {u.name}
-            </li>
+            </div>
           ))}
-        </ul>
+          {m.status === "success" && m.items.length === 0 ? (
+            <div>No people found</div>
+          ) : null}
+        </div>
       ) : null}
     </div>
   );
@@ -85,17 +106,17 @@ export function CustomMention() {
 
 ```tsx
 {m.items.map((u, i) => (
-  <li key={m.items[i] ? getKey(m.items[i]) : i} {...m.getItemProps(u, i)}>
+  <div key={u.id} {...m.getItemProps(u, i)}>
     …
-  </li>
+  </div>
 ))}
 ```
 
-The compound API (`<Mention.List>`) handles this internally — only escape-hatch consumers need to remember it.
+The compound API (`<Mention.List<User>>`) handles this internally — only escape-hatch consumers need to remember it.
 
 ## Imperative control
 
-Pass `handleRef` for `open()` / `close()` / `commit()` / direct textarea access:
+Pass `handleRef` for `open()` / `close()` / `commit()` / host access:
 
 ```tsx
 const handle = useRef<MentionImperativeHandle<User>>(null);
@@ -106,7 +127,7 @@ const handle = useRef<MentionImperativeHandle<User>>(null);
 
 // later:
 handle.current?.commit(suggestedUser);
-handle.current?.textarea?.focus();
+handle.current?.host?.focus();
 ```
 
-Useful for tests, keyboard shortcuts ("⌘K opens the suggestion menu"), and integrating with command palettes.
+Opening rescans the current caret and requires an active trigger. Commit accepts only an item from the current results.

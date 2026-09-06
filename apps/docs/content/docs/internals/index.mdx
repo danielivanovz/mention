@@ -1,0 +1,66 @@
+---
+title: Editor ownership
+description: How a snapshot, a suggestion session, and a host transaction fit together.
+---
+
+Mention reads the text around a caret, offers suggestions, and asks the editing host to apply a replacement. It does not keep a second document. That boundary is the same for a native textarea and a rich editor.
+
+These internals explain the current implementation. For a working integration, start with the [quickstart](/docs) or the [rich-editor guide](/docs/rich-text).
+
+## One document, one owner
+
+| Concern | Owner |
+| --- | --- |
+| Document, selection, formatting, mention nodes | Editing host |
+| Trigger detection and suggestion requests | Mention |
+| Highlighting and suggestion selection | Mention |
+| Applying an edit, serialization, clipboard, undo and redo | Editing host |
+| Measuring the caret | Editor adapter |
+| Placing the suggestion list against that measurement | Mention's popover |
+
+`Mention.Input` supplies a textarea adapter. A rich editor supplies an `EditorAdapter<T>` through `setEditor()`. Both feed the same core; there is no separate rich-document engine inside Mention.
+
+## Read one editable region
+
+An adapter's `read()` returns text, a collapsed caret, and an optional region key:
+
+```ts
+{ text: "Hello @al", caret: 9, key: paragraphId }
+```
+
+The caret and replacement range use UTF-16 offsets relative to that region. The key distinguishes regions with identical text, such as two paragraphs. A rich editor must map these offsets to its own document positions.
+
+Return `null` when Mention should not offer an edit: for an expanded selection, composition, read-only content, or an unsupported region. The host must enforce these conditions in its adapter. The built-in textarea path also handles composition through its input event handlers.
+
+The ProseMirror example reads only the current text block, uses a placeholder for each inline atom, and uses the block's start position as its key. This preserves the example's offset mapping without flattening the document. It is a concrete integration, not a guarantee that every editor has the same position units.
+
+## From a snapshot to an edit
+
+1. The host calls `refresh()` after a document or selection change. `Mention.Input` wires this into normal textarea events.
+2. Mention scans backward from the caret for an eligible trigger and records the snapshot, trigger, and query as a session.
+3. The active channel provides suggestions. The highlight belongs to that session.
+4. Before inserting, Mention reads the host again. The text, caret, and region key must still match, and the chosen item must belong to the current successful results.
+5. Mention calls `replace(edit, item, meta)`. Only an applied replacement produces the selection callback; returning `false` rejects the edit.
+
+For the snapshot above, the replacement range is `[6, 9)`: `@al`. Text after the caret stays outside the replacement. By default, the insertion is the trigger plus the item's label, with a space added unless the insertion ends in whitespace or the suffix starts with whitespace.
+
+A rich editor may create a mention node from `item` instead of inserting `edit.text`. Its transaction decides the node, separator, resulting selection, and undo group. Mention does not repair a host's incorrect offset mapping or transaction.
+
+## Textarea history
+
+The textarea adapter first attempts native `insertText` and checks the resulting value. If that path does not apply the expected text, it uses the native value setter, places the caret, and dispatches an input event so React receives the edit.
+
+The native path supports browser history. The setter fallback does not establish equivalent undo behavior, and undo grouping remains browser-defined. Rich-editor history belongs to the host's transaction system.
+
+## Follow the implementation
+
+Paths are relative to `packages/react`:
+
+- `src/adapters/types.ts`: snapshot and replacement contract.
+- `src/adapters/textarea.ts`: native input measurement and edits.
+- `src/hooks/useMentionCore.ts`: session, host registration, refresh and commit guards.
+- `examples/ProseMirror.tsx`: executable rich-editor adapter.
+- `src/components/editing.test.tsx`: controlled input and stale-selection checks.
+- `e2e/editor.spec.ts`: mention nodes, formatting, block boundaries and history.
+
+Continue with [request lifecycle](/docs/internals/request-lifecycle), [caret positioning](/docs/internals/caret-anchoring), or [focus and ARIA](/docs/internals/interaction).

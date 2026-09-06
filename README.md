@@ -1,6 +1,6 @@
 # mention
 
-> Headless, a11y-first React mention (`@`-trigger autocomplete) primitive for `<textarea>` and contenteditable hosts.
+Headless React mention suggestions for native textareas and editor integrations.
 
 This is the monorepo for [`@danielivanov/mention`](./packages/react). Documentation lives at [`apps/docs`](./apps/docs).
 
@@ -8,7 +8,7 @@ This is the monorepo for [`@danielivanov/mention`](./packages/react). Documentat
 
 | Package | Description |
 |---|---|
-| [`@danielivanov/mention`](./packages/react) | The library. WAI-ARIA combobox-as-substring, multi-trigger, atomic chips, ~14 kB gzip. |
+| [`@danielivanov/mention`](./packages/react) | Headless suggestions, multiple triggers, async search, and caret positioning. The editing host owns its document. |
 
 ## Quick start
 
@@ -16,21 +16,9 @@ This is the monorepo for [`@danielivanov/mention`](./packages/react). Documentat
 npm install @danielivanov/mention
 ```
 
-```tsx
-import { Mention } from "@danielivanov/mention";
-import "@danielivanov/mention/styles.css";
+Start with the executable [composer example](./packages/react/examples/Composer.tsx), or see the [controlled form](./packages/react/examples/MessageForm.tsx) and [ProseMirror integration](./packages/react/examples/ProseMirror.tsx). The documentation uses these same components and source files.
 
-<Mention.Root items={users} getKey={u => u.id} getLabel={u => u.name} onSelect={...}>
-  <Mention.Input aria-label="Message" />
-  <Mention.Popover>
-    <Mention.List>
-      {(u) => <Mention.Item value={u}>{u.name}</Mention.Item>}
-    </Mention.List>
-  </Mention.Popover>
-</Mention.Root>
-```
-
-See the [package README](./packages/react/README.md) for the full API.
+See the [package README](./packages/react/README.md) for API usage and verification limits.
 
 ## Development
 

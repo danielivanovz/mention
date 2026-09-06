@@ -1,0 +1,87 @@
+{
+  "approved": true,
+  "approval": {
+    "kind": "delegated representative",
+    "status": "approved for implementation",
+    "basis": "The user explicitly interrupted further composition work and instructed implementation into the frontend, landing page, and docs. The delegated representative inspected the one completed high-fidelity composition and approves it; no further compositions or design questions are required."
+  },
+  "source": "/Users/daniel/.codex/generated_images/01a0761b-2d45-7510-aecc-9d0ae9b45390/exec-dba654a7-7cfb-4c88-87df-0a0f67655bfc.png",
+  "composition": {
+    "chosenId": "ink-block",
+    "label": "Composition C \u2014 Ink Block",
+    "world": "Type foundry proof",
+    "approval": {
+      "kind": "delegated representative",
+      "status": "approved for implementation",
+      "basis": "The user explicitly interrupted further composition work and instructed implementation into the frontend, landing page, and docs. The delegated representative inspected the one completed high-fidelity composition and approves it; no further compositions or design questions are required."
+    },
+    "inspectedImage": "/Users/daniel/.codex/generated_images/01a0761b-2d45-7510-aecc-9d0ae9b45390/exec-dba654a7-7cfb-4c88-87df-0a0f67655bfc.png",
+    "referenceDimensions": {
+      "width": 1536,
+      "height": 1024
+    },
+    "rationale": "The composition makes the product name unmistakable, identifies a React mention library, and puts an actual writing interaction at the center of the first viewport. The full-width navy, pink, white, and blue fields form a replacement visual world with a legible progression from trying the behavior to installation and editing-host choice. It fulfills the approved direction without returning to a standard split hero.",
+    "semanticTranslationInventory": [
+      {
+        "region": "Navigation",
+        "referenceGeometry": "Navy strip across the full width, approximately y=0\u201354, small wordmark at the left and compact text links plus theme control at the right.",
+        "semantics": "Use a home link, real Playground anchor, documentation link, verified GitHub repository link, and named theme toggle. Preserve one navigation landmark and mobile access to the same destinations.",
+        "fidelityCommitment": "Keep the small left wordmark, open horizontal spacing, and navy ground; do not add floating navigation chrome."
+      },
+      {
+        "region": "Ink hero",
+        "referenceGeometry": "An almost edge-to-edge pale-blue lowercase mention wordmark on navy, roughly x=37\u20131505 and y=57\u2013270. A descriptor row finishes the navy region at y\u2248355.",
+        "semantics": "The product name is the primary heading. Context, right where you type. describes the benefit; Headless mentions for React. identifies the offer. The product description must remain understandable as text when style is unavailable.",
+        "fidelityCommitment": "Retain the extraordinary wordmark scale, broad heavy letterforms, tight horizontal occupation, full ink field, and two-part descriptor row. Do not shrink the name into an ordinary heading or insert a second column."
+      },
+      {
+        "region": "Pink writing specimen",
+        "referenceGeometry": "Full-width saturated pink field from y\u2248355\u2013727, with a pale pink inset specimen approximately x=37\u20131498 and y=377\u2013714. The large textarea spans most of the inset width and about 209 pixels of height.",
+        "semantics": "Use the real Mention library input. Give it a visible associated label, a concise trigger instruction, a Sample data note, working people/channel/command trigger controls, and a working Clear control. The shown names are demonstration data, not customers.",
+        "fidelityCommitment": "The pink field and generously sized input are the centerpiece, not a small demo card. Preserve the pale inset, navy text, clear textarea boundary, substantial typing scale, and utility row underneath."
+      },
+      {
+        "region": "Suggestions",
+        "referenceGeometry": "A compact light list is positioned at the text caret, with a pink highlighted row, short initial avatars, and readable navy names.",
+        "semantics": "Use actual filtered Mention.List and Mention.Item results with current keyboard and pointer behavior. Initial circles are decorative supplements to visible names. Highlight reflects the real active option.",
+        "fidelityCommitment": "Match the option density, simple row shapes, and pink active treatment. The popup position and contents must follow the real caret and query, even where the image is internally inconsistent."
+      },
+      {
+        "region": "Action band",
+        "referenceGeometry": "A white band from y\u2248727\u2013848: a wide pale-blue installation command on the left, solid navy Start building button, then outlined Build with an agent button.",
+        "semantics": "The command is selectable and copyable with success/error feedback. Start building goes to the quickstart. Build with an agent goes to concise agent onboarding backed by the same maintained documentation.",
+        "fidelityCommitment": "Preserve the real install command, confident horizontal hierarchy, filled/outlined action distinction, and generous target heights. Stack coherently on mobile."
+      },
+      {
+        "region": "Editing-host choice",
+        "referenceGeometry": "A full-width pale-blue region begins at y\u2248848. Its large title and short explanation occupy the left half; two substantial outlined choices occupy the right half.",
+        "semantics": "Offer Native textarea and Rich editor paths with accurate destinations. Explain that rich editors connect through an adapter and retain their own document transactions. The verified ProseMirror example is the evidence for that path.",
+        "fidelityCommitment": "Keep the blue field, oversized title, and two genuine choices. Continue subsequent page regions in this geometry and type system rather than generic feature cards."
+      },
+      {
+        "region": "Documentation and agent onboarding",
+        "referenceGeometry": "Not directly illustrated by the approved comp; inherits its type, ink/proof surfaces, contrast, control proportions, and corner language.",
+        "semantics": "Read mode governs docs: clear navigation, search, headings, readable measure, copyable current code, source links, focused Markdown retrieval, and explicit verification and limitations. Retain Fumadocs functionality while replacing its visual treatment coherently.",
+        "fidelityCommitment": "The large homepage wordmark is not imposed on every article. Extend the approved visual language through precise typography and shared navigation/control materials while keeping the reading task primary."
+      }
+    ],
+    "imageGenerationDefectsToCorrect": [
+      "The pictured caret is at the end of the sentence while the suggestions sit under @ali. In the real demo, place and measure the caret immediately after the active trigger/query; do not hard-code the pictured popup location.",
+      "The pictured @ali query lists Jordan and Sam alongside Alice. Real filtered results must match the query. An empty @ query can show all sample people; an ali query should not retain unrelated matches.",
+      "A screenshot of an expanded popup is an interaction state, not a reason to steal focus or summon a mobile keyboard on page load. Make the trigger controls open that state through an ordinary user action.",
+      "Use the existing icon library for the moon/theme symbol, copy, clear, arrows, and editing-host icons. Do not reproduce malformed image-generated icon details.",
+      "Do not literalize the broad claim that mentions work in any input experience. State the implemented native textarea path and editor-adapter contract; do not imply verified compatibility with unimplemented rich-editor adapters.",
+      "Keep the sample-data label and fictional people distinct from adoption evidence. The image contains no basis for customers, usage counts, or external endorsement.",
+      "Treat visible generated texture/lighting as an ink-field reference, not permission to add expensive shaders, fake glass, or visual noise that impairs text contrast. Preserve the approved full color coverage and typographic mass."
+    ],
+    "responsiveCommitments": [
+      "Keep the large wordmark as a width-fitted typographic field without horizontal overflow.",
+      "Stack descriptors and action choices according to reading order when width requires it; do not shrink all text to retain desktop columns.",
+      "Maintain the full-width pink specimen, a comfortable multiline input, usable trigger controls, and a caret-anchored popup constrained to the viewport.",
+      "Keep installation, quickstart, and agent guidance readily reachable on narrow screens; documentation remains a reading surface with functional mobile navigation."
+    ],
+    "verificationFocus": "At the reference breakpoint, preserve the hero's type scale, the sequence and coverage of the four color regions, the specimen dimensions, and the action hierarchy. Verify real mention insertion, copy feedback, keyboard navigation, link destinations, mobile overflow, and both theme modes. Keep the known library accessibility conformance limitation distinct from website accessibility work.",
+    "furtherCompositionWork": "None requested or needed. Proceed with implementation."
+  },
+  "prompt": "Create a high-fidelity desktop WEBSITE UI design comp, 1536px wide by 1024px tall, screenshot straight-on, not a poster, no device mockup, no photography. This is the actual public website for Mention, a headless React mention library, serving frontend developers and their coding agents. Locked visual identity: \"Type foundry proof.\" A luminous cool proof-sheet ground #f3f7fc, foundry navy #172f52, large confident context pink fields #e35980, blue proof #cfe6f3. Flat clean SOLID ink colors: no grain, no textures, no gradients, no shadows except a restrained functional suggestion popup shadow. Typography uses very heavy grotesk lowercase for \"mention\" (Archivo Black style) and clean Archivo reading typography; dedicated mono only actual code. Real rectangular controls, 6px corners maximum. Large typed words, the live caret, and anchoring suggestions to writing supply all visual interest. It must clearly present a React library, not a font launch. No decorative rulers/measurements. No fake metrics, badges, testimonials, customer logos, pricing. Every visible UI word should be accurate and legible. Sample name options are Alice Chen, Jordan Lee, Sam Rivera. Simple arrow and moon icons are fine. Each interactive specimen is a real textarea identifiable with its visible label and tiny \"Sample data\" note. Exact installation command: \"bun add @danielivanov/mention\". Include a glimpse of next section to prove this visual grammar works for technical integration content. Render a polished code-able responsive webpage. COMPOSITION C \u2014 INK BLOCK: Top slim navigation on NAVY ground with small light \"mention\" left, \"Playground\", \"Docs\", \"GitHub\", moon icon right. This navy header continues into a huge pale blue lowercase heavy \"mention\" masthead across 90% width at 230px height; under it within the same navy field put \"Context, right where you type.\" in 40px light text at left and smaller \"Headless mentions for React.\" at right. Navy field ends around 390px. Then a broad pale pink editor region full-width below, not overlapping card: inset 64px, top label \"Try it. Type @, #, or /\" and \"Sample data\". Light proof-sheet textarea with navy 30px editable \"Bring @ali into the conversation.\" and anchored 3-row suggestion popup below @ali, selected Alice Chen. This editor block 300px tall includes \"@ People\", \"# Channels\", \"/ Commands\", \"Clear\" utility row. At 740px cool-sheet action row with the mono command, navy filled \"Start building \u2192\", and \"Build with an agent \u2192\". At 880px a blue-proof next section starts \"Start with your editor.\" with \"Native textarea \u2192\" and \"Rich editor \u2192\". Bold color regions and flat controls, not isolated floating panels."
+}

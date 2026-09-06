@@ -1,114 +1,52 @@
 ---
-title: Controlled value
-description: Integrate with form libraries by treating the textarea value as state you own.
+title: Controlled forms
+description: Validate, submit, and reset a real form while Mention preserves ordinary textarea behavior.
 ---
 
-The compound `<Mention.Root>` doesn't expose `value` / `onValueChange` directly — those land on the textarea. Use `<Mention.Input>`'s standard textarea props for controlled flows, or `useMention()` for the most flexible integration.
+Your form owns the text. Mention writes selections through the input's normal change handler, so typed text and inserted mentions follow the same state and submission path.
 
-## Plain controlled textarea
+## Try the form
 
-```tsx
-import { useState } from "react";
-import { Mention } from "@danielivanovz/mention";
+Submit an empty message to see validation. Then type `@al`, select Alice, and submit again. The receipt shows the actual `FormData` value. Reset clears the text, validation, and receipt, and returns focus to the input.
 
-export function MessageInput() {
-  const [value, setValue] = useState("");
+<div className="docs-example not-prose">
+  <MessageForm />
+</div>
 
-  return (
-    <Mention.Root
-      items={users}
-      getKey={(u) => u.id}
-      getLabel={(u) => u.name}
-      onSelect={(u) => console.log(u)}
-    >
-      <Mention.Input
-        value={value}
-        onChange={(e) => setValue(e.currentTarget.value)}
-        aria-label="Message"
-      />
-      <Mention.Popover>
-        <Mention.List>
-          {(u) => <Mention.Item value={u}>{u.name}</Mention.Item>}
-        </Mention.List>
-      </Mention.Popover>
-    </Mention.Root>
-  );
-}
+This example keeps submissions on the page. In your application, send the validated form data through your existing submission handler.
+
+## Use the complete example
+
+The running form, this source block, and the browser test fixture use the same component. No form library or Mention-specific form wrapper is needed. Style the native form controls with your application's design system.
+
+<include meta='title="MessageForm.tsx"'>../../../../../packages/react/examples/MessageForm.tsx</include>
+
+## Validation and focus
+
+The form uses `noValidate` to display its own required-field error. It checks trimmed text on submission, connects the error to the textarea with `aria-describedby`, sets `aria-invalid`, and focuses the invalid field through its ordinary React ref. Correcting the value clears the error.
+
+Enter commits a highlighted suggestion instead of submitting the form. Outside suggestion selection, Enter retains its normal multiline-input behavior. The submit button follows the usual form path.
+
+With a form library, pass its `value`, change handler, blur handler, name, and ref to `Mention.Input`. Do not treat Root's `onSelect` callback as a replacement for the field's change handler: it only reports completed mention insertions.
+
+## Reset controlled state
+
+Reset updates React state explicitly. The example uses `flushSync` so the cleared value reaches the textarea before the imperative focus and `close()` calls. Closing then records the cleared value, allowing the same query to reopen even when pasted back in one event. This also covers a programmatic `form.reset()` while the popup is open.
+
+When adapting this to an existing form, use its reset operation for the value, touched state, and errors, and close any active mention session. A programmatic value change is not a native input event.
+
+## Preserve the document model
+
+Submission contains plain text. An `onSelect` callback is a notification of insertion, not an inventory of mentions still present: users can delete or replace text afterward. If mentions need stable identities and round-trip serialization, store them in an editor document using [an editor adapter](/docs/rich-text).
+
+The standalone hook uses the same form props:
+
+```tsx title="Standalone hook"
+<textarea {...mention.getInputProps({
+  value,
+  onChange: (event) => setValue(event.currentTarget.value),
+  "aria-label": "Message",
+})} />
 ```
 
-The library composes its own `onChange` (for trigger detection) on top of yours. Both run; you don't lose any keystrokes.
-
-## react-hook-form
-
-`<Mention.Input>` registers like any textarea — `register("message")` via the `name` attribute pattern, or `Controller` for explicit value flow:
-
-```tsx
-import { Controller, useForm } from "react-hook-form";
-import { Mention } from "@danielivanovz/mention";
-
-export function CommentForm() {
-  const { control, handleSubmit } = useForm({
-    defaultValues: { body: "" },
-  });
-
-  return (
-    <form onSubmit={handleSubmit((d) => console.log(d))}>
-      <Mention.Root
-        items={users}
-        getKey={(u) => u.id}
-        getLabel={(u) => u.name}
-        onSelect={(u) => console.log(u)}
-      >
-        <Controller
-          name="body"
-          control={control}
-          render={({ field }) => (
-            <Mention.Input
-              {...field}
-              aria-label="Comment"
-            />
-          )}
-        />
-        <Mention.Popover>
-          <Mention.List>
-            {(u) => <Mention.Item value={u}>{u.name}</Mention.Item>}
-          </Mention.List>
-        </Mention.Popover>
-      </Mention.Root>
-      <button type="submit">Post</button>
-    </form>
-  );
-}
-```
-
-The `field.ref` from `Controller` forwards to the underlying textarea, so RHF's focus-on-error works out of the box.
-
-## Formik
-
-`<Field as={Mention.Input}>` works for most cases — Formik forwards `value` + `onChange`, and the library composes on top:
-
-```tsx
-<Field as={Mention.Input} name="body" aria-label="Comment" />
-```
-
-For onBlur-driven validation, pair with `useField` + an explicit `<Mention.Input>` wired to `field.value` / `field.onChange`.
-
-## Reading commits with `getInsertText`
-
-`onSelect` notifies after a commit but doesn't tell you what got inserted. Use `getInsertText` to control the inserted string and persist a structured representation in parallel:
-
-```tsx
-const [mentionedIds, setMentionedIds] = useState<number[]>([]);
-
-<Mention.Root
-  items={users}
-  getKey={(u) => u.id}
-  getLabel={(u) => u.name}
-  getInsertText={(u) => `@${u.username}`}
-  onSelect={(u) => setMentionedIds((prev) => [...prev, u.id])}
->
-  …
-</Mention.Root>
-```
-
-Storing the structured form (ids) alongside the rendered string keeps the round-trip lossless: server-side, render `@username` back to a styled mention chip using the persisted id list.
+Render the hook's listbox and options with their corresponding getters; see the [API reference](/docs/api-reference) for the full hook contract.

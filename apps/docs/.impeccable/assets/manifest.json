@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "approved_reference": "/Users/daniel/.codex/generated_images/01a0761b-2d45-7510-aecc-9d0ae9b45390/exec-dba654a7-7cfb-4c88-87df-0a0f67655bfc.png",
+  "direction": "Type foundry proof",
+  "review_result": "No production raster assets are needed. Every visible region has a semantic text, interactive control, flat CSS surface, or vector icon role.",
+  "palette": {
+    "navy": "#172f52",
+    "sheet": "#f3f7fc",
+    "pink": "#e35980",
+    "blue": "#cfe6f3"
+  },
+  "produce": [],
+  "direct": [],
+  "semantic": [
+    {
+      "id": "navigation",
+      "implementation": "Use a semantic header and nav with a live-text mention wordmark, anchor links, and a labeled theme button. CSS owns the navy surface, subtle divider, horizontal alignment, spacing, and compact responsive navigation. Use a Lucide moon or sun SVG in the theme button.",
+      "notes": "No wordmark raster or navigation screenshot. Compose with no produced raster assets.",
+      "qa_status": "accepted"
+    },
+    {
+      "id": "hero-type-specimen",
+      "implementation": "Render the oversized mention specimen as live heavy grotesk type inside the hero. Use CSS font sizing, tight letter spacing, line height, and width-aware scaling to preserve its near full-width silhouette. Place the real heading and supporting text in semantic text elements beneath it. CSS owns the navy background and blue text. At narrow widths, scale the specimen to fit and stack the lower text row.",
+      "notes": "Keep text crisp and selectable; do not export the hero or specimen as an image. Reconcile the specimen's accessible treatment with the page heading hierarchy. Compose with no produced raster assets.",
+      "qa_status": "accepted"
+    },
+    {
+      "id": "playground-surface",
+      "implementation": "Build the pink playground band and its inset panel as CSS backgrounds around a labeled interactive editor component. Use semantic heading and supporting label elements. CSS owns all padding, border radii, solid fills, and responsive spacing; reduce inset padding on mobile while retaining a usable editor height.",
+      "notes": "The source image shows incidental generated shading, but the approved brief explicitly requires flat solid surfaces without grain, texture, or gradients. Do not reproduce that shading as media. Compose with no produced raster assets.",
+      "qa_status": "accepted"
+    },
+    {
+      "id": "editor-field-and-suggestions",
+      "implementation": "Use the working mention editor with a native textarea or the project's applicable editable primitive, plus a positioned suggestion list. Render editor content and caret natively. Render suggestion rows as live labels and CSS circular initial avatars, with a pink selected state and navy inactive avatars. Apply appropriate editor, popup, option, and keyboard semantics through the mention components. CSS owns the field border, sheet fill, popup geometry, and any minimal overlay separation; constrain the popup to the viewport on small screens.",
+      "notes": "The editor, names, initial avatars, and menu are interactive UI, not a screenshot. Compose with no produced raster assets.",
+      "qa_status": "accepted"
+    },
+    {
+      "id": "playground-toolbar",
+      "implementation": "Use real buttons for People, Channels, Commands, and Clear. Use live @, #, and / glyphs where appropriate and a Lucide trash SVG for Clear. CSS owns the horizontal button rhythm and divider. Allow wrapping at narrow widths without shrinking touch targets.",
+      "notes": "Keep visible button labels and accessible names. Compose with no produced raster assets.",
+      "qa_status": "accepted"
+    },
+    {
+      "id": "install-command-and-primary-actions",
+      "implementation": "Render the installation command in a code element inside a flat bordered container, with a real copy button using the Lucide copy SVG. Use anchor or button components for the two adjacent calls to action with Lucide arrow-right SVGs. CSS owns the sheet section, blue command fill, navy primary fill, outlined secondary treatment, and layout. Stack the command and actions on small screens and handle the command's long text without clipping.",
+      "notes": "No command text or button image assets. Compose with no produced raster assets.",
+      "qa_status": "accepted"
+    },
+    {
+      "id": "editor-choice-section",
+      "implementation": "Build the blue editor-choice section as a responsive grid containing a heavy grotesk heading, paragraph, and two linked editor cards. Use Lucide text-cursor-input or a simple inline SVG textarea symbol for the native editor card, and a Lucide file-text SVG for the rich editor card. CSS owns thin navy borders, solid sheet-tinted card fills, spacing, and alignment. Stack the text and cards on mobile; keep each card's full area clickable with a visible focus style.",
+      "notes": "The illustrated symbols are simple vector UI icons and must remain SVG. Compose with no produced raster assets.",
+      "qa_status": "accepted"
+    },
+    {
+      "id": "shared-docs-visual-system",
+      "implementation": "Carry the approved palette, live heavy grotesk headings, readable body type, monospace code, flat surfaces, and Lucide icons into the docs shell using semantic navigation, headings, paragraphs, code blocks, and controls. CSS owns responsive side navigation, content widths, active states, borders, and theme colors. No new illustration is required to establish continuity with the approved landing direction.",
+      "notes": "The supplied approved reference covers the landing viewport. This row is a media requirement judgment for shared docs styling, not approval of an unseen docs layout. Compose with no produced raster assets.",
+      "qa_status": "accepted"
+    }
+  ],
+  "execution_order": [],
+  "blockers": [],
+  "assumptions": [
+    "The approved no-grain, no-texture, no-gradient brief takes precedence over incidental shading in the generated reference.",
+    "Typography will ship as actual fonts and live text, with the parent implementation agent selecting the closest available heavy grotesk face.",
+    "Lucide or compact inline SVG will provide all iconography; sample user identities use text initials rather than portraits.",
+    "No supplied region is intended to be a screenshot as the final asset.",
+    "Accepted status records visual classification against the approved reference; the parent remains responsible for checking implemented layout, interaction, accessibility, and responsive fidelity."
+  ]
+}

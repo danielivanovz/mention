@@ -1,5 +1,3 @@
-import { Chips } from "./Chips.tsx";
-import { Editable } from "./Editable.tsx";
 import { Empty } from "./Empty.tsx";
 import { Input } from "./Input.tsx";
 import { Item } from "./Item.tsx";
@@ -17,8 +15,6 @@ import { Root } from "./Root.tsx";
 export const Mention = {
   Root,
   Input,
-  Editable,
-  Chips,
   Popover,
   List,
   Item,

@@ -1,4 +1,8 @@
-import { Mention } from "../../src/index.ts";
+import { Mention } from "@danielivanov/mention";
+import { Composer } from "../../examples/Composer.tsx";
+import { MessageForm } from "../../examples/MessageForm.tsx";
+import { ProseMirrorDemo } from "../../examples/ProseMirror.tsx";
+import { Controlled } from "./Controlled.tsx";
 import { imeUsers, type User, users } from "./users.ts";
 
 interface Channel {
@@ -31,42 +35,38 @@ const MULTI_TRIGGERS = {
 } as const;
 
 export function App() {
-  // C1 — toggle the host element via `?host=editable` to exercise the
-  // contenteditable adapter path. Default stays `textarea` so existing
-  // contract + a11y specs run unchanged.
-  // C2 — `?shape=node` additionally renders a chip-shaped channel via
-  // <Mention.Chips>. Only meaningful in combination with host=editable.
   const params =
     typeof window !== "undefined"
       ? new URLSearchParams(window.location.search)
       : new URLSearchParams();
-  const isEditable = params.get("host") === "editable";
-  const isChipShape = params.get("shape") === "node";
+  if (params.get("example") === "composer")
+    return (
+      <main>
+        <h1>Quickstart</h1>
+        <Composer />
+      </main>
+    );
+  if (params.get("example") === "form")
+    return (
+      <main>
+        <h1>Controlled form</h1>
+        <MessageForm />
+      </main>
+    );
   // M8 — `?ime=1` swaps in a Latin+CJK dataset so manual IME smoke
   // (macOS Japanese / Windows Pinyin / Android Gboard) lands on
   // observably-different items per candidate-window selection.
+  if (params.get("controlled") === "1") return <Controlled />;
+  if (params.get("editor") === "1")
+    return (
+      <main>
+        <h1>Editor integration</h1>
+        <ProseMirrorDemo />
+      </main>
+    );
+  const inPlace = params.get("popup") === "inline";
   const isIME = params.get("ime") === "1";
   const activeUsers = isIME ? imeUsers : users;
-
-  const HostInput = isEditable ? (
-    <Mention.Editable
-      aria-label="Comment"
-      style={{
-        width: "100%",
-        minHeight: 100,
-        padding: 8,
-        fontFamily: "system-ui",
-        border: "1px solid #ccc",
-      }}
-    />
-  ) : (
-    <Mention.Input
-      aria-label="Comment"
-      placeholder="Type something — try @alice"
-      rows={5}
-      style={{ width: "100%", padding: 8, fontFamily: "system-ui" }}
-    />
-  );
 
   return (
     <main style={{ maxWidth: 720, margin: "2rem auto", padding: "1rem" }}>
@@ -74,41 +74,31 @@ export function App() {
       <p>
         Type <kbd>@</kbd> at the start of a word to trigger mention suggestions.
         Try <kbd>↑</kbd>/<kbd>↓</kbd>, <kbd>Enter</kbd>, <kbd>Esc</kbd>.
-        {isEditable ? " (host=editable)" : ""}
       </p>
-      {/* The textarea is labelled via `aria-label` on Mention.Input below.
-          The visible "Comment" line is the consumer-facing label; we
-          deliberately don't wrap in <label> — that's the pattern the docs
-          recommend, and it keeps the harness aligned with how real apps
-          use the library. */}
-      <p style={{ marginBottom: 4, fontWeight: 500 }}>Comment</p>
+      <label
+        htmlFor="comment"
+        style={{ display: "block", marginBottom: 4, fontWeight: 500 }}
+      >
+        Comment
+      </label>
       <Mention.Root<User>
         items={activeUsers}
         getKey={(u) => u.id}
         getLabel={(u) => u.username}
         getInsertText={(u) => `@${u.username}`}
-        {...(isChipShape && {
-          shape: "node" as const,
-          getInsertNode: (u: User) => (
-            <span
-              data-testid={`chip-${u.id}`}
-              style={{
-                background: "#eef",
-                border: "1px solid #99c",
-                borderRadius: 4,
-                padding: "0 4px",
-              }}
-            >
-              @{u.username}
-            </span>
-          ),
-        })}
         onSelect={() => {
           /* no-op; tests assert on host value */
         }}
       >
-        {HostInput}
-        <Mention.Popover>
+        <Mention.Input
+          id="comment"
+          rows={5}
+          style={{ width: "100%", padding: 8, fontFamily: "system-ui" }}
+        />
+        <Mention.Popover
+          aria-label="People"
+          {...(inPlace ? { container: null } : {})}
+        >
           <Mention.Loading>Searching…</Mention.Loading>
           <Mention.List>
             {(user: User) => (
@@ -120,7 +110,6 @@ export function App() {
           </Mention.List>
           <Mention.Empty>No people found</Mention.Empty>
         </Mention.Popover>
-        {isChipShape && <Mention.Chips />}
       </Mention.Root>
 
       <p style={{ marginTop: 24, marginBottom: 4, fontWeight: 500 }}>
@@ -141,7 +130,10 @@ export function App() {
           rows={3}
           style={{ width: "100%", padding: 8, fontFamily: "system-ui" }}
         />
-        <Mention.Popover>
+        <Mention.Popover
+          aria-label="People and channels"
+          {...(inPlace ? { container: null } : {})}
+        >
           {/* One typed list per channel — no runtime cast at the
               consumer site. The library guarantees ctx.items are
               channel-X items when activeTrigger === "X". */}

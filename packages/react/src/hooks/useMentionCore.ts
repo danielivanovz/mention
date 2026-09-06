@@ -1,609 +1,365 @@
-import {
-  type CompositionEventHandler,
-  type FormEventHandler,
-  type KeyboardEventHandler,
-  type ReactNode,
-  type RefObject,
-  useCallback,
-  useEffect,
-  useId,
-  useMemo,
-  useReducer,
-  useRef,
-  useState,
-} from "react";
-import type { EditorAdapter } from "../adapters/types.ts";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { createTextareaAdapter } from "../adapters/textarea.ts";
+import type { EditorAdapter, EditorSnapshot } from "../adapters/types.ts";
 import { findActiveMention } from "../state/find-active-mention.ts";
-import type { PopoverState } from "../state/popover-reducer.ts";
-import { popoverReducer } from "../state/popover-reducer.ts";
-import { CHIP_ID_ATTR, CHIP_TEXT_ATTR } from "../text/caret-range.ts";
-import { applyMentionInsert } from "../text/replace.ts";
 import type {
-  MentionChip,
+  MentionChannelConfig,
   MentionContext,
-  MentionItems,
+  MentionInputProps,
+  MentionKeyEvent,
   MentionSelectMeta,
 } from "../types.ts";
-import { ensureMouseMovingGuard, isMouseMoving } from "./mouse-moving-guard.ts";
+import { trackMouseMovement } from "./mouse-moving-guard.ts";
 import { useChannelQuery } from "./use-channel-query.ts";
 import { useLatest } from "./use-latest.ts";
 
-/**
- * Per-channel config bundle. The dispatcher resolves an active mention
- * to a trigger char; the core looks up the matching channel here to
- * filter / fetch / render / commit. In single-trigger mode, the core's
- * caller synthesises a 1-channel record keyed on the configured trigger.
- *
- * Type-erased: the public-facing wrappers (useMention, useMentionMulti,
- * Mention.Root) preserve TItem; the internal core only cares about the
- * channel structure, not the item shape.
- */
-export interface CoreChannelConfig {
-  readonly items: MentionItems<unknown>;
-  readonly getKey: (item: unknown) => string | number;
-  readonly getLabel: (item: unknown) => string;
-  readonly getInsertText?: (item: unknown, meta: MentionSelectMeta) => string;
-  /**
-   * MentionShape discriminator. `"node"` channels commit as atomic
-   * chip elements; `"substring"` (default, omitted) commits as plain
-   * text.
-   */
-  readonly shape?: "substring" | "node";
-  /**
-   * Required when `shape === "node"`. Returns the React content rendered
-   * inside the chip placeholder via `<Mention.Chips>`. The placeholder's
-   * `data-mention-text` attribute holds the plain-text equivalent for
-   * caret math, regardless of how the React content renders.
-   */
-  readonly getInsertNode?: (item: unknown, meta: MentionSelectMeta) => ReactNode;
-}
-
 export interface CoreProps {
-  /**
-   * Trigger characters this instance recognises. Backwards scan in
-   * findActiveMention checks each char against this list. "First match
-   * wins" — closest-to-caret trigger drives the active channel.
-   */
-  readonly triggers: readonly string[];
-  /**
-   * Per-trigger channel config. The active channel is resolved via
-   * `state.trigger` lookup; effects gracefully no-op when no channel
-   * is active (closed popover, or trigger not in the map).
-   */
-  readonly channels: Readonly<Record<string, CoreChannelConfig>>;
-  /**
-   * User commit notifier. The wrapper layer translates this into the
-   * shape consumers expect (single-trigger: `(item, meta)` directly;
-   * multi-trigger: `({ [activeTrigger]: item }, meta)` discriminated
-   * union).
-   */
-  readonly onCommit: (
-    item: unknown,
-    meta: MentionSelectMeta,
-    activeTrigger: string,
-  ) => void;
-  readonly debounceMs?: number;
-  readonly onValueChange?: (value: string) => void;
+  channels: Readonly<Record<string, MentionChannelConfig<unknown>>>;
+  onCommit: (item: unknown, meta: MentionSelectMeta) => void;
+  debounceMs: number;
 }
-
-/**
- * Return shape extends the public `MentionContext<TItem>` with the
- * listbox/option id helpers and textarea ref the compound parts need.
- *
- * Generic on `TItem` so wrappers (`useMention<T>`, `useMentionMulti<TItemMap>`)
- * can declare the typed return shape without casting at the boundary.
- * The runtime is identical regardless of `TItem` — TypeScript just
- * surfaces the consumer's declared item type.
- */
-export interface CoreReturn<TItem = unknown> extends MentionContext<TItem> {
-  readonly listboxId: string;
-  readonly optionId: (index: number) => string;
-  /**
-   * Live ref to the host element (textarea or contenteditable). Used by
-   * `<Mention.Popover>` to build the Floating UI virtual anchor and by
-   * the imperative handle for focus management.
-   */
-  readonly hostRef: RefObject<HTMLElement | null>;
-  /**
-   * Adapter ref — registered by the wrapping component (`<Mention.Input>`
-   * for textarea, `<Mention.Editable>` for contenteditable). The core
-   * reads `getValue` / `getCaretOffset` / `applyInsert` through this
-   * ref, so the same reducer drives both host types.
-   */
-  readonly adapterRef: RefObject<EditorAdapter | null>;
-  readonly getKey: (item: TItem) => string | number;
-  /**
-   * Registered chips for `shape: "node"` channels. Consumed by
-   * `<Mention.Chips>` to portal each chip's React content into its
-   * placeholder. Empty for substring-only consumers — `<Mention.Chips>`
-   * is opt-in.
-   */
-  readonly chips: readonly MentionChip<TItem>[];
+export interface CoreReturn<T = unknown> extends MentionContext<T> {
+  readonly getKey: (item: T) => string | number;
 }
-
-const INITIAL_STATE: PopoverState = {
-  phase: "closed",
-  trigger: null,
-  query: "",
-  highlightedIndex: -1,
-  itemCount: 0,
-  chipSelected: null,
-};
-
-/**
- * Workhorse hook. Both `useMention<T>()` (public single-trigger),
- * `useMentionMulti<TItemMap>()` (public multi-trigger), and
- * `<Mention.Root>` delegate here.
- *
- * Identity-stable surface: `commit`, `setOpen`, `getInputProps`,
- * `getPopoverProps`, `getItemProps` keep referential equality across
- * renders even when consumer props (channels, onCommit, onValueChange)
- * are rebuilt inline. Effect deps narrow to primitives + the active
- * channel's `items` reference (the one signal that genuinely should
- * trigger a re-filter when consumers update their data). Latest values
- * of mutable props are read through refs (`useLatest` pattern).
- */
-export function useMentionCore<TItem = unknown>(
-  props: CoreProps,
-): CoreReturn<TItem> {
-  const [state, dispatch] = useReducer(popoverReducer, INITIAL_STATE);
-
-  // Latest-value refs. Two refs absorb all consumer-side identity
-  // churn: one for props (channels, triggers, onCommit, onValueChange)
-  // and one for the reducer state. Effects + callbacks read through
-  // these so they never need to subscribe to consumer-prop identity.
-  // Without this, parent re-renders that rebuild props inline would
-  // re-fire the filter effect and churn handler closures, cascading
-  // re-renders into every <Mention.Item>.
-  const propsRef = useLatest(props);
-  const stateRef = useLatest(state);
-
-  // Install document-level listeners that gate pointer-driven highlight
-  // dispatches. Idempotent across mounts; see `mouse-moving-guard.ts`.
-  useEffect(() => {
-    ensureMouseMovingGuard();
-  }, []);
-
-  // Stable ARIA ids — React 19's useId() guarantees uniqueness across SSR
-  // and concurrent renders.
-  const reactId = useId();
-  const listboxId = `mention-listbox-${reactId}`;
-  const optionId = useCallback(
-    (index: number) => `mention-option-${reactId}-${index}`,
-    [reactId],
+interface Session {
+  snapshot: EditorSnapshot;
+  trigger: string;
+  query: string;
+}
+function sameSnapshot(a: EditorSnapshot | null, b: EditorSnapshot | null) {
+  return (
+    a !== null &&
+    b !== null &&
+    a.text === b.text &&
+    a.caret === b.caret &&
+    a.key === b.key
   );
+}
 
-  const hostRef = useRef<HTMLElement | null>(null);
-  // Narrower-typed alias used as the `ref` returned by `getInputProps`,
-  // which is destined for a `<textarea>`. Same underlying RefObject as
-  // `hostRef` — `<Mention.Editable>` consumers use `hostRef` directly.
-  const inputRef = hostRef as unknown as RefObject<HTMLTextAreaElement | null>;
-  const adapterRef = useRef<EditorAdapter | null>(null);
-
-  // Chip registry for shape:"node" channels. Plain useState — consumed
-  // by <Mention.Chips> to portal each chip's React content into the
-  // placeholder DOM element. Empty array for substring-only consumers.
-  const [chips, setChips] = useState<readonly MentionChip<unknown>[]>([]);
-  const chipCounterRef = useRef(0);
-
-  // IME composition guard. True between `compositionstart` and
-  // `compositionend` — `handleChange` bails so the dispatcher doesn't
-  // narrow the popover on provisional, half-converted IME text. The
-  // final scan + dispatch happens in `handleCompositionEnd` so the
-  // popover catches up to the committed value even on browsers that
-  // don't fire a follow-up `input` event after the composition closes.
-  const isComposingRef = useRef(false);
-
-  // Active channel for the data path. Resolved here (not inside
-  // useChannelQuery) so the core stays the single source of truth for
-  // channel lookup; the data hook receives the resolved channel and
-  // owns only the filter / fetch / status machine.
-  const activeChannel: CoreChannelConfig | undefined =
-    state.trigger !== null ? props.channels[state.trigger] : undefined;
-
-  const { items: filtered, status } = useChannelQuery({
-    channel: activeChannel,
-    query: state.query,
-    isOpen: state.phase === "open",
+export function useMentionCore<T = unknown>(props: CoreProps): CoreReturn<T> {
+  for (const trigger of Object.keys(props.channels)) {
+    if (trigger.length !== 1 || /\s/.test(trigger))
+      throw new Error(
+        "Mention triggers must be one non-whitespace UTF-16 character.",
+      );
+  }
+  const [editor, updateEditor] = useState<EditorAdapter<unknown> | null>(null);
+  const editorRef = useRef<EditorAdapter<unknown> | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [highlight, setHighlight] = useState<{
+    session: Session;
+    index: number;
+  } | null>(null);
+  const dismissed = useRef<EditorSnapshot | null>(null);
+  const composing = useRef(false);
+  const mouseMoving = useRef<() => boolean>(() => false);
+  const id = useId();
+  const listboxId = `mention-listbox-${id}`;
+  const optionId = (index: number) => `mention-option-${id}-${index}`;
+  const channel = session ? props.channels[session.trigger] : undefined;
+  const { items, status } = useChannelQuery({
+    channel,
+    query: session?.query ?? "",
+    requestKey: session,
+    debounceMs: props.debounceMs,
   });
+  const open = session !== null && channel !== undefined;
+  const highlightedIndex =
+    !open || items.length === 0
+      ? -1
+      : highlight?.session === session
+        ? Math.min(highlight.index, items.length - 1)
+        : 0;
+  // Only callbacks crossing into editor lifecycles need a latest-value reference.
+  const live = useLatest({ props, session, items, status, highlightedIndex });
 
-  // Keep the reducer's itemCount in sync with the filtered list size.
-  useEffect(() => {
-    if (state.phase !== "open") return;
-    if (state.itemCount !== filtered.length) {
-      dispatch({ type: "ITEMS_CHANGED", itemCount: filtered.length });
-    }
-  }, [filtered.length, state.phase, state.itemCount]);
-
-  // ─── handlers (identity-stable) ──────────────────────────────────────
-  //
-  // Every handler below uses `[]` as its dep array — they read mutable
-  // values from refs. This keeps `commit`, `getInputProps`, `getItemProps`
-  // referentially equal across renders, so consumers spreading them
-  // onto JSX don't trigger child re-renders on every keystroke.
-
-  const commit = useCallback(
-    (item: unknown) => {
-      const adapter = adapterRef.current;
-      const currentState = stateRef.current;
-      const trigger = currentState.trigger;
-      if (adapter === null || trigger === null) {
-        dispatch({ type: "COMMIT" });
-        return;
-      }
-      const channel = propsRef.current.channels[trigger];
-      if (channel === undefined) {
-        dispatch({ type: "COMMIT" });
-        return;
-      }
-      const caret = adapter.getCaretOffset();
-      const meta = {
-        trigger,
-        query: currentState.query,
-        triggerOffset: caret - currentState.query.length - 1,
-      };
-      const insertText =
-        channel.getInsertText !== undefined
-          ? channel.getInsertText(item, meta)
-          : `${trigger}${channel.getLabel(item)}`;
-
-      if (channel.shape === "node") {
-        if (
-          channel.getInsertNode === undefined ||
-          typeof adapter.applyChipInsert !== "function"
-        ) {
-          // Misconfiguration: shape:"node" without getInsertNode or a
-          // chip-capable adapter. Bail silently — production users on
-          // textarea hosts get an obvious no-op.
-          dispatch({ type: "COMMIT" });
-          return;
-        }
-        const id = `mc-${++chipCounterRef.current}`;
-        const placeholder = adapter.element.ownerDocument.createElement("span");
-        placeholder.setAttribute(CHIP_ID_ATTR, id);
-        placeholder.setAttribute(CHIP_TEXT_ATTR, insertText);
-        placeholder.setAttribute("contenteditable", "false");
-        placeholder.setAttribute("data-mention-chip", "");
-        placeholder.setAttribute("aria-label", channel.getLabel(item));
-        // Placeholder is intentionally empty — the React portal in
-        // <Mention.Chips> owns its visible content. data-mention-text
-        // carries the plain-text equivalent for caret math, and the
-        // aria-label is what AT reads. Consumers who skip <Mention.Chips>
-        // see an empty chip (documented opt-in).
-        const node = channel.getInsertNode(item, meta);
-
-        adapter.applyChipInsert({
-          triggerOffset: meta.triggerOffset,
-          selectionStart: caret,
-          chip: placeholder,
-        });
-
-        setChips((prev) => [
-          ...prev,
-          { id, trigger, item, insertText, placeholder, node },
-        ]);
-
-        propsRef.current.onCommit(item, meta, trigger);
-        dispatch({ type: "COMMIT" });
-        return;
-      }
-
-      // Substring path — pure text math + thin DOM mutation. See
-      // `text/replace.ts` and its property tests.
-      const result = applyMentionInsert({
-        value: adapter.getValue(),
-        selectionStart: caret,
-        triggerOffset: meta.triggerOffset,
-        insertText,
-      });
-      adapter.applyInsert(result);
-
-      propsRef.current.onCommit(item, meta, trigger);
-      dispatch({ type: "COMMIT" });
+  const setEditor = useCallback((next: EditorAdapter<T> | null) => {
+    editorRef.current = next as EditorAdapter<unknown> | null;
+    updateEditor(next as EditorAdapter<unknown> | null);
+    dismissed.current = null;
+    setSession(null);
+  }, []);
+  const textareaRef = useCallback(
+    (node: HTMLTextAreaElement | null) => {
+      setEditor(node ? createTextareaAdapter(node) : null);
     },
-    [stateRef, propsRef],
+    [setEditor],
   );
 
-  const filteredRef = useLatest(filtered);
-
-  // Editor-agnostic input handler. Reads value + caret through the
-  // adapter so the same closure works for textarea (`onChange`) and
-  // contenteditable (`onInput`).
-  const handleInput: FormEventHandler<HTMLElement> = useCallback(() => {
-    const adapter = adapterRef.current;
-    if (adapter === null) return;
-    const newValue = adapter.getValue();
-
-    // IME guard — provisional events during composition carry
-    // half-converted text. Suppress dispatch and defer to
-    // handleCompositionEnd for the final scan.
-    if (isComposingRef.current) {
-      propsRef.current.onValueChange?.(newValue);
+  const close = useCallback(() => {
+    dismissed.current = editorRef.current?.read() ?? null;
+    setSession(null);
+  }, []);
+  const refresh = useCallback(() => {
+    if (composing.current) return;
+    const snapshot = editorRef.current?.read() ?? null;
+    if (!sameSnapshot(snapshot, dismissed.current)) dismissed.current = null;
+    const active = snapshot
+      ? findActiveMention(
+          snapshot.text,
+          snapshot.caret,
+          Object.keys(live.current.props.channels),
+        )
+      : null;
+    if (!snapshot || !active || sameSnapshot(snapshot, dismissed.current)) {
+      setSession(null);
       return;
     }
-
-    const caret = adapter.getCaretOffset();
-    const active = findActiveMention(
-      newValue,
-      caret,
-      propsRef.current.triggers,
+    setSession((previous) =>
+      previous &&
+      sameSnapshot(previous.snapshot, snapshot) &&
+      previous.trigger === active.trigger &&
+      previous.query === active.query
+        ? previous
+        : { snapshot, ...active },
     );
+  }, [live]);
+  const setOpen = useCallback(
+    (next: boolean) => {
+      if (!next) {
+        close();
+        return;
+      }
+      dismissed.current = null;
+      refresh();
+    },
+    [close, refresh],
+  );
 
-    if (active !== null) {
-      dispatch({
-        type: "OPEN_AT",
+  const commit = useCallback(
+    (item: T): boolean => {
+      const current = live.current;
+      const host = editorRef.current;
+      const active = current.session;
+      const snapshot = host?.read() ?? null;
+      if (
+        composing.current ||
+        !host ||
+        !active ||
+        current.status !== "success" ||
+        !current.items.includes(item) ||
+        !sameSnapshot(snapshot, active.snapshot)
+      ) {
+        close();
+        return false;
+      }
+      const config = current.props.channels[active.trigger];
+      if (!config) {
+        close();
+        return false;
+      }
+      const meta = {
         trigger: active.trigger,
         query: active.query,
-      });
-    } else if (stateRef.current.phase === "open") {
-      dispatch({ type: "DISMISS" });
-    }
-
-    propsRef.current.onValueChange?.(newValue);
-  }, [stateRef, propsRef]);
-
-  const handleCompositionStart = useCallback(() => {
-    isComposingRef.current = true;
-  }, []);
-
-  const handleCompositionEnd: CompositionEventHandler<HTMLElement> =
-    useCallback(() => {
-      isComposingRef.current = false;
-      // Re-run the dispatcher scan against the post-commit value via
-      // the adapter. OPEN_AT preserves state identity when the resolved
-      // (trigger, query) is unchanged, so it's safe to fire even if a
-      // post-composition input event already dispatched.
-      const adapter = adapterRef.current;
-      if (adapter === null) return;
-      const newValue = adapter.getValue();
-      const caret = adapter.getCaretOffset();
-      const active = findActiveMention(
-        newValue,
-        caret,
-        propsRef.current.triggers,
+        triggerOffset:
+          active.snapshot.caret - active.query.length - active.trigger.length,
+      };
+      const insertion =
+        config.getInsertText?.(item, meta) ??
+        `${active.trigger}${config.getLabel(item)}`;
+      const suffix = active.snapshot.text.slice(active.snapshot.caret);
+      const text =
+        insertion + (/\s$/.test(insertion) || /^\s/.test(suffix) ? "" : " ");
+      const applied = host.replace(
+        { from: meta.triggerOffset, to: active.snapshot.caret, text },
+        item,
+        meta,
       );
-      if (active !== null) {
-        dispatch({
-          type: "OPEN_AT",
-          trigger: active.trigger,
-          query: active.query,
+      close();
+      if (applied === false) return false;
+      current.props.onCommit(item, meta);
+      return true;
+    },
+    [live, close],
+  );
+
+  const handleKeyDown = useCallback(
+    (event: MentionKeyEvent): boolean => {
+      if (
+        event.defaultPrevented ||
+        event.altKey ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.shiftKey ||
+        event.isComposing ||
+        event.keyCode === 229 ||
+        composing.current
+      )
+        return false;
+      const current = live.current;
+      if (!current.session) return false;
+      if (
+        !sameSnapshot(
+          editorRef.current?.read() ?? null,
+          current.session.snapshot,
+        )
+      ) {
+        close();
+        return false;
+      }
+      if (event.key === "Escape") {
+        close();
+        event.preventDefault();
+        return true;
+      }
+      if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+        if (!current.items.length) return false;
+        const delta = event.key === "ArrowDown" ? 1 : -1;
+        setHighlight({
+          session: current.session,
+          index:
+            (current.highlightedIndex + delta + current.items.length) %
+            current.items.length,
         });
-      } else if (stateRef.current.phase === "open") {
-        dispatch({ type: "DISMISS" });
+        event.preventDefault();
+        return true;
       }
-    }, [stateRef, propsRef]);
-
-  const handleKeyDown: KeyboardEventHandler<HTMLElement> = useCallback(
-    (event) => {
-      const currentState = stateRef.current;
-      const adapter = adapterRef.current;
-
-      // ─── two-step backspace branch ─────────────────────────────────
-      // Runs BEFORE the popover-open switch so chip selection wins
-      // over Esc/arrow ambiguity once a chip is selected.
-      if (currentState.chipSelected !== null) {
-        if (event.key === "Backspace") {
-          // Second Backspace — delete the selected chip.
+      if (event.key === "Enter" || event.key === "Tab") {
+        const item = current.items[current.highlightedIndex];
+        if (item !== undefined && commit(item as T)) {
           event.preventDefault();
-          const chipEl = adapter?.element.querySelector(
-            `[data-mention-id="${currentState.chipSelected}"]`,
-          );
-          if (chipEl !== null && chipEl !== undefined) {
-            chipEl.remove();
-            // Second-backspace policy is "delete chip only" — the
-            // trailing space added at chip-insert time stays put.
-            adapter?.element.dispatchEvent(
-              new Event("input", { bubbles: true }),
-            );
-          }
-          setChips((prev) =>
-            prev.filter((c) => c.id !== currentState.chipSelected),
-          );
-          dispatch({ type: "CHIP_DESELECT" });
-          return;
-        }
-        // Any arrow key, Escape, or printable character deselects
-        // (and lets the original event continue, except Escape which
-        // we eat to keep the gesture local).
-        if (event.key === "Escape") {
-          event.preventDefault();
-          dispatch({ type: "CHIP_DESELECT" });
-          return;
-        }
-        if (
-          event.key === "ArrowLeft" ||
-          event.key === "ArrowRight" ||
-          event.key === "ArrowUp" ||
-          event.key === "ArrowDown" ||
-          event.key.length === 1 // any printable character
-        ) {
-          dispatch({ type: "CHIP_DESELECT" });
-          // fall through — let the keystroke take effect
-        }
-      } else if (event.key === "Backspace" && adapter !== null) {
-        // First Backspace at a chip's right boundary — select instead
-        // of deleting on this keystroke.
-        const chipEl = adapter.getChipBeforeCaret?.();
-        if (chipEl !== null && chipEl !== undefined) {
-          const id = chipEl.getAttribute("data-mention-id");
-          if (id !== null) {
-            event.preventDefault();
-            dispatch({ type: "CHIP_SELECT", id });
-            return;
-          }
+          return true;
         }
       }
+      return false;
+    },
+    [live, close, commit],
+  );
 
-      if (currentState.phase !== "open") return;
+  useEffect(() => {
+    if (!editor) return;
+    const doc = editor.element.ownerDocument;
+    const mouse = trackMouseMovement(doc);
+    mouseMoving.current = mouse.isMoving;
+    const blur = () => {
+      if (!editor.element.contains(doc.activeElement)) close();
+    };
+    const outside = (event: PointerEvent) => {
+      const target = event.target as Node | null;
+      if (
+        !editor.element.contains(target) &&
+        !doc.getElementById(listboxId)?.contains(target)
+      )
+        close();
+    };
+    editor.element.addEventListener("focusout", blur);
+    doc.addEventListener("pointerdown", outside, true);
+    return () => {
+      mouse.destroy();
+      editor.element.removeEventListener("focusout", blur);
+      doc.removeEventListener("pointerdown", outside, true);
+    };
+  }, [editor, close, listboxId]);
 
-      switch (event.key) {
-        case "ArrowDown":
-          event.preventDefault();
-          dispatch({ type: "HIGHLIGHT_NEXT" });
-          return;
-        case "ArrowUp":
-          event.preventDefault();
-          dispatch({ type: "HIGHLIGHT_PREV" });
-          return;
-        case "Enter":
-        case "Tab": {
-          if (currentState.highlightedIndex < 0) return;
-          const item = filteredRef.current[currentState.highlightedIndex];
-          if (item === undefined) return;
+  const activeOptionId =
+    highlightedIndex < 0 ? undefined : optionId(highlightedIndex);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: new results may remount the option at the same index.
+  useEffect(() => {
+    if (!activeOptionId) return;
+    const doc = editor?.element.ownerDocument;
+    const list = doc?.getElementById(listboxId);
+    const option = doc?.getElementById(activeOptionId);
+    if (!list || !option) return;
+    const bounds = list.getBoundingClientRect();
+    const item = option.getBoundingClientRect();
+    const scaleY = bounds.height / list.offsetHeight || 1;
+    const top = bounds.top + list.clientTop * scaleY;
+    const bottom = top + list.clientHeight * scaleY;
+    // Scroll only the list; scrollIntoView can move the page before positioning.
+    if (item.top < top) list.scrollTop -= (top - item.top) / scaleY;
+    else if (item.bottom > bottom)
+      list.scrollTop += (item.bottom - bottom) / scaleY;
+  }, [editor, activeOptionId, listboxId, session, status]);
+
+  const getEditorProps = (): React.HTMLAttributes<HTMLElement> => ({
+    "aria-haspopup": "listbox",
+    "aria-autocomplete": "list",
+    "aria-controls": open ? listboxId : undefined,
+    "aria-activedescendant":
+      highlightedIndex >= 0 ? optionId(highlightedIndex) : undefined,
+  });
+  function getInputProps(
+    input: Omit<MentionInputProps, "ref"> = {},
+  ): MentionInputProps {
+    return {
+      ...input,
+      ...getEditorProps(),
+      ref: textareaRef,
+      onChange(event) {
+        input.onChange?.(event);
+        refresh();
+      },
+      onSelect(event) {
+        input.onSelect?.(event);
+        refresh();
+      },
+      onFocus(event) {
+        input.onFocus?.(event);
+        refresh();
+      },
+      onBlur(event) {
+        input.onBlur?.(event);
+        close();
+      },
+      onKeyDown(event) {
+        input.onKeyDown?.(event);
+        if (!event.defaultPrevented && !event.nativeEvent.isComposing)
+          handleKeyDown(event);
+      },
+      onCompositionStart(event) {
+        composing.current = true;
+        input.onCompositionStart?.(event);
+      },
+      onCompositionEnd(event) {
+        composing.current = false;
+        input.onCompositionEnd?.(event);
+        refresh();
+      },
+    };
+  }
+  return {
+    query: session?.query ?? "",
+    open,
+    highlightedIndex,
+    items: items as readonly T[],
+    status,
+    activeTrigger: open ? session.trigger : null,
+    editor: editor as EditorAdapter<T> | null,
+    setEditor,
+    refresh,
+    handleKeyDown,
+    getInputProps,
+    getEditorProps,
+    setOpen,
+    commit,
+    getKey: (item) => channel?.getKey(item) ?? "",
+    getPopoverProps: () => ({
+      id: listboxId,
+      role: "listbox",
+      "aria-busy": status === "loading",
+    }),
+    getItemProps: (item, index, itemProps = {}) => ({
+      ...itemProps,
+      id: optionId(index),
+      role: "option",
+      "aria-selected": index === highlightedIndex,
+      onMouseDown(event) {
+        itemProps.onMouseDown?.(event);
+        if (!event.defaultPrevented && event.button === 0) {
           event.preventDefault();
           commit(item);
-          return;
         }
-        case "Escape":
-          event.preventDefault();
-          dispatch({ type: "DISMISS" });
-          return;
-      }
-    },
-    [stateRef, filteredRef, commit],
-  );
-
-  // ─── prop spreaders ──────────────────────────────────────────────────
-
-  const open = state.phase === "open";
-
-  // getInputProps re-creates only when its *output* would change —
-  // ARIA attribute values depend on `open` and `state.highlightedIndex`,
-  // not on the handler closures (which are now stable).
-  // `onChange` and `onInput` both delegate to `handleInput`; the
-  // wrapping component picks the one that fits its element. React's
-  // <textarea> uses onChange (alias for onInput), <div contenteditable>
-  // uses onInput. Returning both lets the same props bag spread onto
-  // either host. `ref` is the textarea-typed alias of `hostRef` consumed
-  // by <Mention.Input>; <Mention.Editable> uses `hostRef` directly.
-  const getInputProps = useCallback(
-    () => ({
-      role: "combobox",
-      "aria-controls": listboxId,
-      "aria-expanded": open ? "true" : "false",
-      "aria-haspopup": "listbox",
-      "aria-autocomplete": "list",
-      "aria-activedescendant":
-        open && state.highlightedIndex >= 0
-          ? optionId(state.highlightedIndex)
-          : undefined,
-      onChange: handleInput,
-      onInput: handleInput,
-      onKeyDown: handleKeyDown,
-      onCompositionStart: handleCompositionStart,
-      onCompositionEnd: handleCompositionEnd,
-      ref: inputRef,
-    }),
-    [
-      open,
-      listboxId,
-      state.highlightedIndex,
-      optionId,
-      handleInput,
-      handleKeyDown,
-      handleCompositionStart,
-      handleCompositionEnd,
-      inputRef,
-    ],
-  );
-
-  const getPopoverProps = useCallback(
-    () => ({
-      role: "listbox",
-      id: listboxId,
-    }),
-    [listboxId],
-  );
-
-  // `key` is intentionally NOT included here — React 19 warns when `key`
-  // is spread into JSX. `<Mention.List>` applies the key one level up via
-  // a Fragment wrapper. Escape-hatch consumers must pass `key={getKey(item)}`
-  // explicitly on their option elements.
-  const getItemProps = useCallback(
-    (item: unknown, index: number) => ({
-      role: "option",
-      id: optionId(index),
-      "aria-selected": index === state.highlightedIndex,
-      onMouseDown: (event: { preventDefault: () => void }) => {
-        // mousedown (not click) so the textarea doesn't lose focus
-        // before we commit — focus loss would dismiss the popover first.
-        event.preventDefault();
-        commit(item);
       },
-      onPointerMove: () => {
-        if (!isMouseMoving()) return;
-        if (stateRef.current.highlightedIndex === index) return;
-        dispatch({ type: "HIGHLIGHT_AT", index });
+      onPointerMove(event) {
+        itemProps.onPointerMove?.(event);
+        if (
+          !event.defaultPrevented &&
+          event.pointerType === "mouse" &&
+          mouseMoving.current() &&
+          session
+        )
+          setHighlight({ session, index });
       },
     }),
-    [optionId, state.highlightedIndex, commit, stateRef],
-  );
-
-  const setOpen = useCallback((next: boolean) => {
-    if (!next) dispatch({ type: "DISMISS" });
-    // Programmatic open is intentionally not supported — the popover
-    // only opens via the trigger char to keep AT semantics tied to
-    // user-initiated text changes.
-  }, []);
-
-  // The active channel's getKey is what `<Mention.List>` uses for keys.
-  // Read fresh through the channels ref so unstabilised consumer code
-  // doesn't churn the return-shape memo on every render.
-  const activeChannelForKey =
-    state.trigger !== null ? props.channels[state.trigger] : undefined;
-  const getKeyActive: (item: unknown) => string | number =
-    activeChannelForKey?.getKey ?? ((item) => String(item));
-
-  // The hook's internal state stores items as `unknown[]` (we don't
-  // know TItem at the useState site). The single boundary cast lives
-  // here on the `items` field — TypeScript can't statically prove
-  // that the runtime items match the wrapper-supplied TItem, but the
-  // contract IS preserved: items only enter the core via the channels
-  // record the wrapper built from `TItem`-typed inputs, so handing
-  // them back as `TItem[]` is safe by construction.
-  //
-  // All callable fields (`commit`, `getItemProps`, `getKey`) need no
-  // cast — function-parameter contravariance lets `(item: unknown) =>
-  // X` flow into `(item: TItem) => X` cleanly under
-  // `strictFunctionTypes`.
-  return useMemo<CoreReturn<TItem>>(
-    () => ({
-      query: state.query,
-      open,
-      highlightedIndex: state.highlightedIndex,
-      items: filtered as readonly TItem[],
-      status,
-      activeTrigger: state.trigger,
-      getInputProps,
-      getPopoverProps,
-      getItemProps,
-      setOpen,
-      commit,
-      listboxId,
-      optionId,
-      hostRef,
-      adapterRef,
-      getKey: getKeyActive,
-      chips: chips as readonly MentionChip<TItem>[],
-      chipSelected: state.chipSelected,
-    }),
-    [
-      state.query,
-      open,
-      state.highlightedIndex,
-      filtered,
-      status,
-      state.trigger,
-      getInputProps,
-      getPopoverProps,
-      getItemProps,
-      setOpen,
-      commit,
-      listboxId,
-      optionId,
-      getKeyActive,
-      chips,
-      state.chipSelected,
-    ],
-  );
+  };
 }
