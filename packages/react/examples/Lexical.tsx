@@ -15,6 +15,7 @@ import {
   $createParagraphNode,
   $createRangeSelectionFromDom,
   $createTextNode,
+  $getDocument,
   $getRoot,
   $getSelection,
   $getState,
@@ -27,6 +28,7 @@ import {
   defineExtension,
   type EditorConfig,
   HISTORY_PUSH_TAG,
+  type LexicalEditor,
   type LexicalNode,
   TextNode,
 } from "lexical";
@@ -72,7 +74,11 @@ export class MentionNode extends TextNode {
                     element.getAttribute("data-mention-label") ?? "",
                     element.textContent ?? "",
                     element.getAttribute("data-mention-trigger") ?? "@",
-                  ),
+                  )
+                    .setFormat(
+                      Number(element.getAttribute("data-mention-format")) || 0,
+                    )
+                    .setStyle(element.getAttribute("style") ?? ""),
                 }),
               }
             : null,
@@ -86,6 +92,19 @@ export class MentionNode extends TextNode {
     element.dataset.mentionLabel = $getState(this, labelState);
     element.dataset.mentionTrigger = $getState(this, triggerState);
     return element;
+  }
+  override exportDOM(editor: LexicalEditor) {
+    const { element } = super.exportDOM(editor);
+    // TextNode can render strong/em/code. A canonical span keeps HTML-only paste
+    // independent of its current formatting tag; JSON clipboard data is optional.
+    const wrapper = $getDocument().createElement("span");
+    wrapper.dataset.mentionId = $getState(this, idState);
+    wrapper.dataset.mentionLabel = $getState(this, labelState);
+    wrapper.dataset.mentionTrigger = $getState(this, triggerState);
+    wrapper.dataset.mentionFormat = String(this.getFormat());
+    wrapper.style.cssText = this.getStyle();
+    if (element) wrapper.append(element);
+    return { element: wrapper };
   }
   override canInsertTextBefore() {
     return false;

@@ -129,6 +129,8 @@ test("native copy, cut and paste retain token IDs", async ({
     "Native clipboard round-trip is covered in Chromium; HTML import runs in every engine.",
   );
   const editor = page.getByRole("textbox", { name: "Lexical message" });
+  await page.keyboard.press("ControlOrMeta+b");
+  await page.keyboard.press("ControlOrMeta+i");
   await page.keyboard.type("@Al");
   await page.keyboard.press("Enter");
   await expect(editor.locator("[data-mention-id=alice]")).toHaveCount(1);
@@ -145,7 +147,26 @@ test("native copy, cut and paste retain token IDs", async ({
   });
   expect(copied.html).toContain('data-mention-id="alice"');
   expect(copied.html).toContain('data-mention-label="Alice Chen"');
+  expect(copied.html).toContain('data-mention-trigger="@"');
   expect(copied.text.trim()).toBe("@Alice Chen");
+  await page.getByRole("button", { name: "Clear editor" }).click();
+  await editor.evaluate((element, html) => {
+    const clipboardData = new DataTransfer();
+    clipboardData.setData("text/html", html);
+    const event = new Event("paste", { bubbles: true, cancelable: true });
+    Object.defineProperty(event, "clipboardData", { value: clipboardData });
+    element.dispatchEvent(event);
+  }, copied.html);
+  await expect(editor.locator("[data-mention-id=alice]")).toHaveCount(1);
+  const htmlDocument = JSON.parse(
+    (await page.getByTestId("lexical-document").textContent()) ?? "{}",
+  );
+  expect(htmlDocument.root.children[0].children[0]).toMatchObject({
+    type: "mention",
+    mentionId: "alice",
+    mentionLabel: "Alice Chen",
+    format: 3,
+  });
   await page.getByRole("button", { name: "Clear editor" }).click();
   await page.keyboard.press("ControlOrMeta+v");
   await expect(editor.locator("[data-mention-id=alice]")).toHaveCount(1);
