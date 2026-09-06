@@ -22,7 +22,7 @@ In Next.js App Router, put `"use client"` at the top of the component containing
 
 `onSelect` is an optional notification after insertion; it is not required to insert a mention and does not track which mentions remain in the document. A textarea inserts text, not persistent mention entities. Do not add placeholder callbacks or duplicate the input's value in a separate mention state.
 
-Arrays are filtered locally by case-insensitive label substring. An async fetcher has type `(query: string, signal: AbortSignal) => Promise<readonly Person[]>`; it supplies its own search results. Forward `signal` to network calls and keep the fetcher reference stable. The default debounce is 150 ms. The core also rejects obsolete results when a fetcher ignores cancellation.
+Arrays are filtered locally by case-insensitive label substring by default. Use a pure synchronous `filter(item, query)` for application-specific matching, and opt into `allowSpaces` per channel for full-name queries. Fetcher results bypass `filter`. An async fetcher has type `(query: string, signal: AbortSignal) => Promise<readonly Person[]>`; it supplies its own search results. Forward `signal` to network calls and keep the fetcher reference stable. The default debounce is 150 ms. The core also rejects obsolete results when a fetcher ignores cancellation.
 
 For an editor adapter, register with `setEditor(adapter)`, clear it on cleanup, call `refresh()` after document or selection transactions, and forward keyboard events through `handleKeyDown` before editor bindings. Use consistent UTF-16 offsets within one text region. See [editor integration](/docs/rich-text) and the [adapter contract](/docs/api-reference#editor-adapter).
 
@@ -30,6 +30,8 @@ For an editor adapter, register with `setEditor(adapter)`, clear it on cleanup, 
 
 - [Controlled forms](/docs/recipes/controlled-value) for form state and event composition.
 - [Async search](/docs/recipes/async-items) for request and error handling.
+- [Lexical](/docs/lexical) for token nodes, clipboard identity, and editor-owned history.
+- [Name matching](/docs/recipes/i18n#name-matching) for full names and synchronous accent folding.
 - [Multiple triggers](/docs/recipes/multi-trigger) for typed channels.
 - [Custom rendering](/docs/recipes/custom-rendering) and [styling](/docs/recipes/styling) for application-owned UI.
 - [API reference](/docs/api-reference) for public types and props.
@@ -45,4 +47,4 @@ Run the application's type check and relevant tests. Then exercise the real host
 4. For rich editors, verify mention serialization, paragraph boundaries, formatting, paste, undo, redo, and node deletion in that editor's document model.
 5. Check names, visible focus/highlight, dialogs, portals, scrolling, and composition. Follow the [accessibility verification limits](/docs/accessibility#verification).
 
-Report the commands run, the interaction outcomes observed, and any checks left unperformed. The executable ProseMirror example establishes only its tested integration; adapters for other editors require their own verification. Preserve the textarea's native textbox semantics. A rich editor supplies its own textbox role and multiline state; Mention supplies suggestion relationships. Automated browser tests do not prove assistive-technology compatibility or real OS IME behavior.
+Report the commands run, the interaction outcomes observed, and any checks left unperformed. The executable ProseMirror and Lexical examples establish their tested integrations; other adapters require their own verification. Preserve the textarea's native textbox semantics. A rich editor supplies its own textbox role and multiline state; Mention supplies suggestion relationships. Automated browser tests do not prove assistive-technology compatibility or real OS IME behavior.

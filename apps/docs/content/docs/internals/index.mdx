@@ -32,7 +32,7 @@ The caret and replacement range use UTF-16 offsets relative to that region. The 
 
 Return `null` when Mention should not offer an edit: for an expanded selection, composition, read-only content, or an unsupported region. The host must enforce these conditions in its adapter. The built-in textarea path also handles composition through its input event handlers.
 
-The ProseMirror example reads only the current text block, uses a placeholder for each inline atom, and uses the block's start position as its key. This preserves the example's offset mapping without flattening the document. It is a concrete integration, not a guarantee that every editor has the same position units.
+The ProseMirror example reads only the current text block, uses a placeholder for each inline atom, and uses the block's start position as its key. This preserves the example's offset mapping without flattening the document. The Lexical example maps UTF-16 across formatted text nodes and uses the block’s node key. Both represent existing inline atoms as `U+FFFC`, which stops trigger detection. These are concrete mappings; other editors can use different position units.
 
 ## From a snapshot to an edit
 
@@ -59,8 +59,8 @@ Paths are relative to `packages/react`:
 - `src/adapters/types.ts`: snapshot and replacement contract.
 - `src/adapters/textarea.ts`: native input measurement and edits.
 - `src/hooks/useMentionCore.ts`: session, host registration, refresh and commit guards.
-- `examples/ProseMirror.tsx`: executable rich-editor adapter.
+- `examples/ProseMirror.tsx` and `examples/Lexical.tsx`: executable rich-editor adapters.
 - `src/components/editing.test.tsx`: controlled input and stale-selection checks.
-- `e2e/editor.spec.ts`: mention nodes, formatting, block boundaries and history.
+- `e2e/editor.spec.ts` and `e2e/lexical.spec.ts`: mention nodes, formatting, block boundaries, clipboard data, and history.
 
 Continue with [request lifecycle](/docs/internals/request-lifecycle), [caret positioning](/docs/internals/caret-anchoring), or [focus and ARIA](/docs/internals/interaction).

@@ -15,7 +15,7 @@ Shared repository guidance. `CLAUDE.md` is a relative symlink to this file; main
 ## Source of truth
 
 - [Library source](packages/react/src) and its tests define the current API. [Package scripts](package.json) and [CI](.github/workflows/ci.yml) define the available checks.
-- [Executable examples](packages/react/examples) supply the composer, controlled form, async recovery, and ProseMirror integration used by docs and browser fixtures. ProseMirror is the implemented rich-editor example; other adapters need their own evidence.
+- [Executable examples](packages/react/examples) supply the composer, controlled form, async recovery, ProseMirror, and Lexical integrations used by docs and browser fixtures. The landing rich-editor mode uses the same Lexical host as its docs and browser fixture. Other adapters need their own evidence.
 - [Documentation content](apps/docs/content/docs) supplies HTML articles, search, and Markdown exports. Include actual example files with Fumadocs `<include>`; keep copied code and agent exports aligned with the running examples.
 - For website work, read [PRODUCT.md](apps/docs/PRODUCT.md) and [DESIGN.md](apps/docs/DESIGN.md). Extend the established design and shared header. Update those records when product or design decisions change; record substantive UI verification in `apps/docs/.impeccable/reviews`.
 - `.misc/spike` contains ignored historical investigations, not current API requirements. Verification reports describe the revision tested, not permanent guarantees.
