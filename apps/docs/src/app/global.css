@@ -83,6 +83,24 @@ body {
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
 }
+.lexical-editor {
+  position: relative;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.lexical-editor[data-placeholder]:has(> p:only-child > br:only-child)::before {
+  content: attr(data-placeholder);
+  position: absolute;
+  pointer-events: none;
+  color: var(--fg-muted);
+}
+.mention-token {
+  padding: 0.05em 0.2em;
+  border-radius: 0.25rem;
+  background: var(--host-ground);
+  color: var(--fg);
+  box-decoration-break: clone;
+}
 html > body[data-scroll-locked] {
   /* biome-ignore lint/complexity/noImportantStyles: neutralize react-remove-scroll compensation with stable scrollbar gutters. */
   margin-right: 0 !important;
@@ -834,7 +852,8 @@ div:has(+ #nd-sidebar-mobile) {
   font-size: 1rem;
   line-height: 1.65;
 }
-.docs-example .ProseMirror p {
+.docs-example .ProseMirror p,
+.docs-example .lexical-editor p {
   margin: 0 0 0.75em;
   color: var(--fg);
   font: inherit;
@@ -843,7 +862,8 @@ div:has(+ #nd-sidebar-mobile) {
   color: var(--fg);
   font-weight: 650;
 }
-.docs-example form > div:has(> button) {
+.docs-example form > div:has(> button),
+.docs-example .example-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
@@ -859,15 +879,22 @@ div:has(+ #nd-sidebar-mobile) {
   color: var(--fg);
   background: var(--bg);
 }
-.docs-example button:hover {
+.docs-example button:hover:not(:disabled) {
   border-color: var(--fg);
+}
+.docs-example button:disabled {
+  opacity: 0.5;
+}
+.docs-example button:active:not(:disabled) {
+  background: var(--border-subtle);
 }
 .docs-example button[type="submit"] {
   color: var(--bg);
   background: var(--fg);
   border-color: var(--fg);
 }
-.docs-example form > p[role="status"] {
+.docs-example form > p[role="status"],
+.docs-example .example-actions + p[role="status"] {
   min-height: 2.8em;
   margin-bottom: 0;
   white-space: pre-wrap;

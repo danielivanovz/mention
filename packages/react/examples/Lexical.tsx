@@ -195,6 +195,7 @@ type EditorProps = {
   className?: string;
   style?: CSSProperties;
   "aria-describedby"?: string;
+  "aria-labelledby"?: string;
   placeholder?: string;
   active?: boolean;
   ref?: Ref<LexicalMentionEditorHandle>;
