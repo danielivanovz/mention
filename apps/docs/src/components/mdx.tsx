@@ -1,6 +1,7 @@
 import { Pre } from "fumadocs-ui/components/codeblock";
 import defaultMdxComponents from "fumadocs-ui/mdx";
 import type { MDXComponents } from "mdx/types";
+import { AsyncSearch } from "../../../../packages/react/examples/AsyncSearch";
 import { Composer } from "../../../../packages/react/examples/Composer";
 import { MessageForm } from "../../../../packages/react/examples/MessageForm";
 import { ProseMirrorDemo } from "../../../../packages/react/examples/ProseMirror";
@@ -17,6 +18,7 @@ export function getMDXComponents(components?: MDXComponents) {
     ProseMirrorDemo,
     Composer,
     MessageForm,
+    AsyncSearch,
     ...components,
   } satisfies MDXComponents;
 }

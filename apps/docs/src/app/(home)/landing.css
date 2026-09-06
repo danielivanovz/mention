@@ -127,8 +127,15 @@
   min-width: 1.25rem;
 }
 .trigger-buttons button:hover,
-.clear-specimen:hover {
+.clear-specimen:hover:not(:disabled) {
   background: #f4a5bc;
+}
+.clear-specimen:disabled {
+  opacity: 0.5;
+}
+.trigger-buttons button:active,
+.clear-specimen:active:not(:disabled) {
+  background: #e98eaa;
 }
 .clear-specimen {
   border-left: 1px solid #bd6280;
@@ -227,12 +234,18 @@
 .foundry-button:hover {
   background: var(--bg-elevated);
 }
+.foundry-button:active {
+  background: var(--border-subtle);
+}
 .primary-button {
   background: var(--fg);
   color: var(--bg);
 }
 .primary-button:hover {
   background: var(--fg-muted);
+}
+.primary-button:active {
+  background: color-mix(in srgb, var(--fg) 88%, var(--bg));
 }
 .install-command {
   min-width: 0;
@@ -265,8 +278,11 @@
   min-height: 2.75rem;
   border-radius: 0.25rem;
 }
-.install-command button:hover {
+.install-command button:hover:not(:disabled) {
   background: var(--border-subtle);
+}
+.install-command button:active:not(:disabled) {
+  background: color-mix(in srgb, var(--border-subtle) 75%, var(--fg));
 }
 .install-command button svg {
   width: 1.4rem;
@@ -312,6 +328,9 @@
 }
 .host-choices a:hover {
   background: var(--bg);
+}
+.host-choices a:active {
+  background: var(--bg-elevated);
 }
 .host-choices svg:first-child {
   width: 2.5rem;
@@ -550,6 +569,9 @@
 }
 .agent-section a:hover {
   background: #284767;
+}
+.agent-section a:active {
+  background: #355775;
 }
 .agent-section :focus-visible {
   outline-color: var(--proof);

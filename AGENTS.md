@@ -15,7 +15,7 @@ Shared repository guidance. `CLAUDE.md` is a relative symlink to this file; main
 ## Source of truth
 
 - [Library source](packages/react/src) and its tests define the current API. [Package scripts](package.json) and [CI](.github/workflows/ci.yml) define the available checks.
-- [Executable examples](packages/react/examples) supply the composer, controlled form, and ProseMirror integration used by docs and browser fixtures. ProseMirror is the implemented rich-editor example; other adapters need their own evidence.
+- [Executable examples](packages/react/examples) supply the composer, controlled form, async recovery, and ProseMirror integration used by docs and browser fixtures. ProseMirror is the implemented rich-editor example; other adapters need their own evidence.
 - [Documentation content](apps/docs/content/docs) supplies HTML articles, search, and Markdown exports. Include actual example files with Fumadocs `<include>`; keep copied code and agent exports aligned with the running examples.
 - For website work, read [PRODUCT.md](apps/docs/PRODUCT.md) and [DESIGN.md](apps/docs/DESIGN.md). Extend the established design and shared header. Update those records when product or design decisions change; record substantive UI verification in `apps/docs/.impeccable/reviews`.
 - `.misc/spike` contains ignored historical investigations, not current API requirements. Verification reports describe the revision tested, not permanent guarantees.
@@ -26,9 +26,9 @@ Mention owns trigger detection, suggestion requests, highlighting, keyboard sele
 
 `EditorAdapter.read()` supplies one editable text region and a collapsed caret. Snapshot and replacement offsets use UTF-16 within that region; use a region key when identical text can occur in different places. The textarea adapter registers through `getInputProps()`. External editors register through `setEditor()` and call `refresh()` after document and selection changes.
 
-Results belong to their request session. Reject obsolete results and insertion into a changed document or selection. Derive synchronous filtering during render. A dismissal applies to the unchanged snapshot, and clears when the snapshot changes.
+Results belong to their request session. Reject obsolete results and insertion into a changed document or selection. Derive synchronous filtering during render. A dismissal applies to the unchanged snapshot, and clears when the snapshot changes. Failed requests hide the popup; an explicit open retries the failed query, while ordinary refreshes preserve it. Keep recovery controls and application-owned status messages outside the listbox.
 
-Preserve native textarea semantics and ordinary React handlers, refs, and form props. Rich editors supply their textbox role and multiline state; Mention supplies suggestion relationships. Keep focus in the editor and scroll the suggestion list without moving the page. Preserve composition and modified-key handling. `onSelect` reports insertion; it is not an inventory of mentions remaining in the document.
+Preserve native textarea semantics and ordinary React handlers, refs, and form props. Rich editors supply their textbox role and multiline state; Mention supplies suggestion relationships. Keep focus in the editor and scroll the suggestion list without moving the page. Pointer selection completes on click so dragging away can cancel. Preserve composition and modified-key handling. `onSelect` reports insertion; it is not an inventory of mentions remaining in the document.
 
 The package requires React 19 and exposes a client boundary. Floating UI is its only runtime dependency. CSS is opt-in and accepts shadcn variables. Supply `Mention.List<T>` types explicitly: React context cannot infer them from Root. Framework examples with state, event handlers, or render callbacks need their own client boundary.
 

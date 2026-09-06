@@ -2,7 +2,8 @@
 
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import type { HTMLAttributes, SyntheticEvent } from "react";
+import { describe, expect, it, vi } from "vitest";
 
 import { Mention } from "./index.ts";
 
@@ -17,7 +18,13 @@ const USERS: readonly User[] = [
   { id: 3, name: "Marcus" },
 ];
 
-function Demo({ onSelect }: { onSelect?: (u: User) => void } = {}) {
+function Demo({
+  onSelect,
+  itemProps,
+}: {
+  onSelect?: (u: User) => void;
+  itemProps?: HTMLAttributes<HTMLDivElement>;
+} = {}) {
   return (
     <Mention.Root<User>
       trigger="@"
@@ -30,7 +37,9 @@ function Demo({ onSelect }: { onSelect?: (u: User) => void } = {}) {
       <Mention.Popover>
         <Mention.List>
           {(user: User) => (
-            <Mention.Item value={user}>{user.name}</Mention.Item>
+            <Mention.Item value={user} {...itemProps}>
+              {user.name}
+            </Mention.Item>
           )}
         </Mention.List>
         <Mention.Empty>No people found</Mention.Empty>
@@ -40,6 +49,95 @@ function Demo({ onSelect }: { onSelect?: (u: User) => void } = {}) {
 }
 
 describe("Mention — textarea suggestions", () => {
+  it("composes pointer handlers and commits once on the completed click", async () => {
+    const user = userEvent.setup();
+    const events: string[] = [];
+    render(
+      <Demo
+        onSelect={() => events.push("selected")}
+        itemProps={{
+          onMouseDown: () => events.push("pressed"),
+          onClick: () => events.push("clicked"),
+        }}
+      />,
+    );
+    const textarea = screen.getByRole("textbox", { name: "message" });
+    await user.type(textarea, "@dan");
+    const option = screen.getByRole("option", { name: "Daniel" });
+    expect(fireEvent.mouseDown(option, { button: 0 })).toBe(false);
+    expect(events).toEqual(["pressed"]);
+    expect(textarea).toHaveValue("@dan");
+    fireEvent.mouseUp(option, { button: 0 });
+    fireEvent.click(option, { button: 0 });
+    expect(events).toEqual(["pressed", "clicked", "selected"]);
+    expect(textarea).toHaveValue("@Daniel ");
+    expect(textarea).toHaveFocus();
+  });
+
+  it("lets a consumer prevent selection in its click handler", async () => {
+    const user = userEvent.setup();
+    const onSelect = vi.fn();
+    render(
+      <Demo
+        onSelect={onSelect}
+        itemProps={{ onClick: (event) => event.preventDefault() }}
+      />,
+    );
+    const textarea = screen.getByRole("textbox", { name: "message" });
+    await user.type(textarea, "@dan");
+    await user.click(screen.getByRole("option", { name: "Daniel" }));
+    expect(onSelect).not.toHaveBeenCalled();
+    expect(textarea).toHaveValue("@dan");
+    expect(textarea).toHaveFocus();
+    expect(screen.getByRole("listbox")).toBeVisible();
+  });
+
+  it.each([
+    "onMouseDown",
+    "onPointerDown",
+  ] as const)("respects a consumer %s veto without canceling a later gesture", async (handler) => {
+    const user = userEvent.setup();
+    const onSelect = vi.fn();
+    let prevent = true;
+    render(
+      <Demo
+        onSelect={onSelect}
+        itemProps={{
+          [handler]: (event: SyntheticEvent) => {
+            if (prevent) event.preventDefault();
+          },
+        }}
+      />,
+    );
+    const textarea = screen.getByRole("textbox", { name: "message" });
+    await user.type(textarea, "@d");
+    const option = screen.getByRole("option", { name: "Daniel" });
+    await user.click(option);
+    expect(onSelect).not.toHaveBeenCalled();
+    expect(textarea).toHaveValue("@d");
+
+    // A canceled drag has no click to clean up its press state.
+    await user.pointer({ target: option, keys: "[MouseLeft>]" });
+    await user.pointer({ target: document.body, keys: "[/MouseLeft]" });
+    prevent = false;
+    await user.click(option);
+    expect(onSelect).toHaveBeenCalledTimes(1);
+    expect(textarea).toHaveValue("@Daniel ");
+  });
+
+  it("does not claim or select from a secondary mouse button", async () => {
+    const user = userEvent.setup();
+    const onSelect = vi.fn();
+    render(<Demo onSelect={onSelect} />);
+    const textarea = screen.getByRole("textbox", { name: "message" });
+    await user.type(textarea, "@dan");
+    const option = screen.getByRole("option", { name: "Daniel" });
+    expect(fireEvent.mouseDown(option, { button: 2 })).toBe(true);
+    fireEvent.click(option, { button: 2 });
+    expect(onSelect).not.toHaveBeenCalled();
+    expect(textarea).toHaveValue("@dan");
+  });
+
   it("preserves native textbox semantics and advertises suggestions at rest", () => {
     render(<Demo />);
 

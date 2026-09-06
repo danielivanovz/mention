@@ -92,7 +92,7 @@ export interface MentionContext<T> {
     index: number,
     props?: HTMLAttributes<HTMLDivElement>,
   ) => HTMLAttributes<HTMLDivElement>;
-  /** Opening rescans the selection and requires an active trigger. */
+  /** Opening rescans the selection and retries a failed search. Requires an active trigger. */
   setOpen: (open: boolean) => void;
   /** Commits only a current result at the unchanged selection. */
   commit: (item: T) => boolean;
@@ -105,6 +105,7 @@ export type UseMentionMulti<M extends Record<string, unknown>> =
   MentionMultiContext<M>;
 
 export interface MentionImperativeHandle<T> {
+  /** Rescans the selection and retries a failed search without changing the text. */
   open(): void;
   close(): void;
   commit(item: T): boolean;

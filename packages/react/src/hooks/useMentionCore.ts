@@ -52,6 +52,7 @@ export function useMentionCore<T = unknown>(props: CoreProps): CoreReturn<T> {
   } | null>(null);
   const dismissed = useRef<EditorSnapshot | null>(null);
   const composing = useRef(false);
+  const canceledPress = useRef<EventTarget | null>(null);
   const mouseMoving = useRef<() => boolean>(() => false);
   const id = useId();
   const listboxId = `mention-listbox-${id}`;
@@ -63,7 +64,7 @@ export function useMentionCore<T = unknown>(props: CoreProps): CoreReturn<T> {
     requestKey: session,
     debounceMs: props.debounceMs,
   });
-  const open = session !== null && channel !== undefined;
+  const open = session !== null && channel !== undefined && status !== "error";
   const highlightedIndex =
     !open || items.length === 0
       ? -1
@@ -121,9 +122,11 @@ export function useMentionCore<T = unknown>(props: CoreProps): CoreReturn<T> {
         return;
       }
       dismissed.current = null;
+      // Explicitly reopening a failed search retries it; ordinary refreshes do not.
+      if (live.current.status === "error") setSession(null);
       refresh();
     },
-    [close, refresh],
+    [close, refresh, live],
   );
 
   const commit = useCallback(
@@ -343,12 +346,27 @@ export function useMentionCore<T = unknown>(props: CoreProps): CoreReturn<T> {
       id: optionId(index),
       role: "option",
       "aria-selected": index === highlightedIndex,
+      onPointerDown(event) {
+        itemProps.onPointerDown?.(event);
+        canceledPress.current = event.defaultPrevented
+          ? event.currentTarget
+          : null;
+      },
       onMouseDown(event) {
         itemProps.onMouseDown?.(event);
-        if (!event.defaultPrevented && event.button === 0) {
+        if (event.defaultPrevented) canceledPress.current = event.currentTarget;
+        // Retain editor focus; a completed click, not the press, selects.
+        if (!event.defaultPrevented && event.button === 0)
           event.preventDefault();
+      },
+      onClick(event) {
+        itemProps.onClick?.(event);
+        // A non-pointer activation has no press to veto.
+        const canceled =
+          event.detail > 0 && canceledPress.current === event.currentTarget;
+        canceledPress.current = null;
+        if (!event.defaultPrevented && !canceled && event.button === 0)
           commit(item);
-        }
       },
       onPointerMove(event) {
         itemProps.onPointerMove?.(event);

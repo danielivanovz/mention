@@ -1,4 +1,5 @@
 import { Mention } from "@danielivanov/mention";
+import { AsyncSearch } from "../../examples/AsyncSearch.tsx";
 import { Composer } from "../../examples/Composer.tsx";
 import { MessageForm } from "../../examples/MessageForm.tsx";
 import { ProseMirrorDemo } from "../../examples/ProseMirror.tsx";
@@ -51,6 +52,13 @@ export function App() {
       <main>
         <h1>Controlled form</h1>
         <MessageForm />
+      </main>
+    );
+  if (params.get("example") === "async")
+    return (
+      <main>
+        <h1>Async search</h1>
+        <AsyncSearch />
       </main>
     );
   // M8 — `?ime=1` swaps in a Latin+CJK dataset so manual IME smoke

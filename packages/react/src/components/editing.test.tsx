@@ -347,6 +347,50 @@ describe("request ownership", () => {
     await act(async () => {});
     expect(result.current.status).toBe("error");
   });
+  it("retries a failed query only when explicitly reopened, preserving request ownership", async () => {
+    const pending: Array<{
+      query: string;
+      signal: AbortSignal;
+      resolve: (items: typeof users) => void;
+      reject: (error: Error) => void;
+    }> = [];
+    const fetcher = vi.fn(
+      (query: string, signal: AbortSignal) =>
+        new Promise<typeof users>((resolve, reject) =>
+          pending.push({ query, signal, resolve, reject }),
+        ),
+    );
+    const { result } = renderHook(() =>
+      useMention({ ...config, items: fetcher, debounceMs: 0 }),
+    );
+    const update = attach(result);
+    update("@a");
+    await act(() => pending[0]!.reject(new Error("offline")));
+    expect(result.current.status).toBe("error");
+    expect(result.current.open).toBe(false);
+    expect(result.current.getEditorProps()["aria-controls"]).toBeUndefined();
+    expect(
+      result.current.getEditorProps()["aria-activedescendant"],
+    ).toBeUndefined();
+    act(() => result.current.refresh());
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    act(() => result.current.setOpen(true));
+    expect(pending[0]?.signal.aborted).toBe(true);
+    expect(pending[1]?.query).toBe("a");
+    expect(result.current.status).toBe("loading");
+    expect(result.current.items).toEqual([]);
+    // Reopening while already loading must not duplicate the request.
+    act(() => result.current.setOpen(true));
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    update("@b");
+    expect(pending[1]?.signal.aborted).toBe(true);
+    await act(() => pending[2]!.resolve([users[1]!]));
+    await act(() => pending[1]!.resolve([users[0]!]));
+    expect(result.current.items).toEqual([users[1]]);
+    act(() => result.current.setOpen(true));
+    expect(fetcher).toHaveBeenCalledTimes(3);
+    act(() => expect(result.current.commit(users[1]!)).toBe(true));
+  });
 });
 
 it("preserves the session when a controlled consumer supplies a new callback ref", () => {

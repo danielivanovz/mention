@@ -1,10 +1,11 @@
 "use client";
 
-import { Check, Copy, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Check, Copy, Hourglass, X } from "lucide-react";
+import { type Ref, useEffect, useState } from "react";
 import { cn } from "@/lib/cn";
 
 export function CopyControl({
+  ref,
   value,
   url,
   getText,
@@ -14,6 +15,7 @@ export function CopyControl({
   className,
   failureMessage = "Copy failed. Select the text to copy it manually.",
 }: {
+  ref?: Ref<HTMLButtonElement>;
   value?: string;
   url?: string;
   getText?: () => string;
@@ -48,25 +50,45 @@ export function CopyControl({
       setStatus("failed");
     }
   }
-  const Icon = status === "copied" ? Check : status === "failed" ? X : Copy;
+  const Icon =
+    status === "copied"
+      ? Check
+      : status === "failed"
+        ? X
+        : status === "pending"
+          ? Hourglass
+          : Copy;
   return (
     <span className={cn("copy-control", className)}>
       <button
+        ref={ref}
         type="button"
         onClick={copy}
         disabled={status === "pending"}
         aria-label={
-          status === "copied" && copiedLabel
-            ? `${label}: ${copiedLabel}`
-            : label
+          status === "pending"
+            ? `${label}: Copying…`
+            : status === "copied"
+              ? `${label}: ${copiedLabel ?? "Copied"}`
+              : label
         }
         aria-busy={status === "pending"}
         title={label}
       >
         <Icon size={16} aria-hidden="true" />
         {!iconOnly && (
-          <span>
-            {status === "copied" && copiedLabel ? copiedLabel : label}
+          <span className="copy-label" aria-hidden="true">
+            <span
+              data-visible={
+                status !== "pending" && !(status === "copied" && copiedLabel)
+              }
+            >
+              {label}
+            </span>
+            <span data-visible={status === "pending"}>Copying…</span>
+            {copiedLabel && (
+              <span data-visible={status === "copied"}>{copiedLabel}</span>
+            )}
           </span>
         )}
       </button>

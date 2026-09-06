@@ -8,7 +8,7 @@ import {
 } from "fumadocs-ui/components/ui/popover";
 import { ArrowUpRight, Terminal, X } from "lucide-react";
 import Link from "next/link";
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { createAgentPrompt } from "@/lib/agent-prompt";
 import { cn } from "@/lib/cn";
 import { CopyControl } from "./copy-control";
@@ -23,6 +23,7 @@ export function AgentSetup({
   className?: string;
 }) {
   const id = useId();
+  const copyRef = useRef<HTMLButtonElement>(null);
   const [prompt, setPrompt] = useState("");
   return (
     <Popover
@@ -45,6 +46,10 @@ export function AgentSetup({
         className="agent-setup"
         aria-labelledby={`${id}-title`}
         aria-describedby={`${id}-description`}
+        onOpenAutoFocus={(event) => {
+          event.preventDefault();
+          copyRef.current?.focus({ preventScroll: true });
+        }}
       >
         <div className="agent-setup-heading">
           <h2 id={`${id}-title`}>Build with your agent.</h2>
@@ -68,6 +73,7 @@ export function AgentSetup({
         </div>
         <div className="agent-setup-actions">
           <CopyControl
+            ref={copyRef}
             value={prompt}
             label="Copy prompt"
             copiedLabel="Copied"
