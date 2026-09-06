@@ -44,31 +44,39 @@ With a standalone hook, spread `getInputProps()` to preserve the same event hand
 
 Synthetic composition tests check event handling; they do not verify real candidate-window behavior. The repository includes a manual smoke rig at `packages/react/manual-at/ime/`. Read [Accessibility](/docs/accessibility#verification) for the current verification boundary.
 
-## Locale-aware search
+## Name matching
 
-For synchronous arrays, Mention filters with a case-insensitive substring match on `getLabel`. This built-in filter does not provide locale-specific collation, transliteration, or fuzzy matching.
+By default, a space ends the query and synchronous arrays use a case-insensitive substring match on `getLabel`. Opt into `allowSpaces` to search full names such as `@Alice Chen`, and supply a synchronous `filter` to choose your application's matching rules:
 
-To supply your own matching rules, use an async fetcher. Fetcher results are used as returned, without a second local filter. For example, this factory makes a locale-aware prefix matcher:
-
-```ts
-import type { MentionFetcher } from "@danielivanov/mention";
+```tsx
+const fold = (text: string) =>
+  text.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
 
 type Person = { id: string; name: string };
+const people: Person[] = [
+  { id: "alice", name: "Alice Chen" },
+  { id: "jose", name: "José García" },
+];
 
-export function createPeopleSearch(
-  people: readonly Person[],
-  locale: string,
-): MentionFetcher<Person> {
-  const collator = new Intl.Collator(locale, {
-    sensitivity: "base",
-    usage: "search",
-  });
-
-  return async (query) =>
-    people.filter((person) =>
-      collator.compare(person.name.slice(0, query.length), query) === 0,
-    );
-}
+<Mention.Root<Person>
+  items={people}
+  getKey={(person) => person.id}
+  getLabel={(person) => person.name}
+  allowSpaces
+  filter={(person, query) => fold(person.name).includes(fold(query))}
+>
+  {/* Input, popover, and options */}
+</Mention.Root>
 ```
 
-Create the fetcher once for stable inputs, or memoize it with the people and locale as dependencies. Pass it as `items`; set `debounceMs={0}` for immediate local results. Choose matching behavior with your actual language data, since this prefix example is not a full transliteration or fuzzy-search implementation.
+Typing `@jose gar` now matches José García immediately. Accent folding is a policy for this example; it is not transliteration or a universal rule for all languages. Use `Intl.Collator` or another application-owned matcher when your language data needs different behavior. The filter runs during render, so keep it pure. No async wrapper or debounce is needed for local data.
+
+Both options are per channel in a `triggers` map. Async fetchers receive the full query, including spaces when enabled, and their results are used as returned without applying `filter`.
+
+### Where a query ends
+
+`allowSpaces` accepts Unicode horizontal space separators (`Zs`). Tabs, line breaks, and rich-editor atom placeholders (`U+FFFC`) always stop detection. The closest configured trigger wins.
+
+After selecting a name or pressing Escape, continuing forward from that query keeps it dismissed. A new trigger or an earlier edit can reopen suggestions. Calling the handle's `open()` explicitly rescans even a dismissed query.
+
+Textareas still contain ordinary text; this option does not track mention identity. Use an [editor integration](/docs/rich-text) when you need structured mention nodes.

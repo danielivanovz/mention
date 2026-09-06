@@ -1,6 +1,7 @@
 import { Mention } from "@danielivanov/mention";
 import { AsyncSearch } from "../../examples/AsyncSearch.tsx";
 import { Composer } from "../../examples/Composer.tsx";
+import { LexicalDemo } from "../../examples/Lexical.tsx";
 import { MessageForm } from "../../examples/MessageForm.tsx";
 import { ProseMirrorDemo } from "../../examples/ProseMirror.tsx";
 import { Controlled } from "./Controlled.tsx";
@@ -54,6 +55,13 @@ export function App() {
         <MessageForm />
       </main>
     );
+  if (params.get("example") === "lexical")
+    return (
+      <main>
+        <h1>Lexical integration</h1>
+        <LexicalDemo />
+      </main>
+    );
   if (params.get("example") === "async")
     return (
       <main>
@@ -74,7 +82,14 @@ export function App() {
     );
   const inPlace = params.get("popup") === "inline";
   const isIME = params.get("ime") === "1";
-  const activeUsers = isIME ? imeUsers : users;
+  const natural = params.get("natural") === "1";
+  const activeUsers = isIME
+    ? imeUsers
+    : natural
+      ? [...users, { id: "jose", name: "José García", username: "jose" }]
+      : users;
+  const fold = (text: string) =>
+    text.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
 
   return (
     <main style={{ maxWidth: 720, margin: "2rem auto", padding: "1rem" }}>
@@ -91,6 +106,13 @@ export function App() {
       </label>
       <Mention.Root<User>
         items={activeUsers}
+        allowSpaces={natural}
+        {...(natural
+          ? {
+              filter: (user: User, query: string) =>
+                fold(`${user.name} ${user.username}`).includes(fold(query)),
+            }
+          : {})}
         getKey={(u) => u.id}
         getLabel={(u) => u.username}
         getInsertText={(u) => `@${u.username}`}

@@ -3,11 +3,18 @@ import type {
   MentionInputProps,
   UseMentionMultiProps,
 } from "./index.ts";
+
 type User = { id: number; name: string };
 type Channel = { slug: string };
 export const channels: UseMentionMultiProps<{ "@": User; "#": Channel }> = {
   triggers: {
-    "@": { items: [], getKey: (u) => u.id, getLabel: (u) => u.name },
+    "@": {
+      items: [],
+      getKey: (u) => u.id,
+      getLabel: (u) => u.name,
+      allowSpaces: true,
+      filter: (u, query) => u.name.includes(query),
+    },
     "#": { items: [], getKey: (c) => c.slug, getLabel: (c) => c.slug },
   },
   onSelect(payload) {

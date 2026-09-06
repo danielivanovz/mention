@@ -25,6 +25,10 @@ export interface MentionChannelConfig<T> {
   items: MentionItems<T>;
   getKey: (item: T) => string | number;
   getLabel: (item: T) => string;
+  /** Allow horizontal spaces in queries. Line breaks, tabs, and editor atoms still end them. */
+  allowSpaces?: boolean;
+  /** Synchronous arrays only. Defaults to case-insensitive label substring matching. */
+  filter?: (item: T, query: string) => boolean;
   /** Defaults to the trigger followed by the label. */
   getInsertText?: (item: T, meta: MentionSelectMeta) => string;
 }

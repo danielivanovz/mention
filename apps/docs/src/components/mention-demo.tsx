@@ -1,71 +1,28 @@
 "use client";
 
 import { Mention, type MentionImperativeHandle } from "@danielivanov/mention";
-import { Trash2 } from "lucide-react";
-import { useRef, useState } from "react";
+import dynamic from "next/dynamic";
+import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
+import {
+  type Person,
+  PlaygroundCaption,
+  PlaygroundSuggestions,
+  PlaygroundToolbar,
+  type Topic,
+  triggers,
+} from "./playground-parts";
 
-interface Person {
-  id: string;
-  name: string;
-  username: string;
-  initials: string;
-}
-interface Topic {
-  id: string;
-  name: string;
-  description: string;
-}
-const people: Person[] = [
-  {
-    id: "alice",
-    name: "Alice Chen",
-    username: "alice",
-    initials: "AC",
-  },
-  {
-    id: "jordan",
-    name: "Jordan Lee",
-    username: "jordan",
-    initials: "JL",
-  },
-  {
-    id: "sam",
-    name: "Sam Rivera",
-    username: "sam",
-    initials: "SR",
-  },
-];
-const channels: Topic[] = [
-  { id: "design", name: "design", description: "Ideas taking shape" },
-  { id: "engineering", name: "engineering", description: "Making it work" },
-  { id: "general", name: "general", description: "A little of everything" },
-];
-const commands: Topic[] = [
-  { id: "summarise", name: "summarise", description: "Find the main points" },
-  { id: "remind", name: "remind", description: "Come back to this later" },
-  { id: "poll", name: "poll", description: "Make a decision together" },
-];
-const triggers = {
-  "@": {
-    items: people,
-    getKey: (p: Person) => p.id,
-    getLabel: (p: Person) => p.name,
-    getInsertText: (p: Person) => `@${p.username}`,
-  },
-  "#": {
-    items: channels,
-    getKey: (t: Topic) => t.id,
-    getLabel: (t: Topic) => t.name,
-  },
-  "/": {
-    items: commands,
-    getKey: (t: Topic) => t.id,
-    getLabel: (t: Topic) => t.name,
-  },
-};
+const RichPlayground = dynamic(() => import("./rich-mention-demo"), {
+  ssr: false,
+  loading: () => (
+    <div className="specimen-editor-loading" role="status">
+      Loading editor…
+    </div>
+  ),
+});
 
-export function MentionDemo() {
+function TextareaPlayground({ active }: { active: boolean }) {
   const [value, setValue] = useState("");
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const handleRef = useRef<MentionImperativeHandle<Person | Topic>>(null);
@@ -85,6 +42,49 @@ export function MentionDemo() {
     handleRef.current?.open();
   }
 
+  useEffect(() => {
+    if (!active) handleRef.current?.close();
+  }, [active]);
+  return (
+    <Mention.Root<{ "@": Person; "#": Topic; "/": Topic }>
+      triggers={triggers}
+      handleRef={handleRef}
+    >
+      <div className="specimen-heading">
+        <label htmlFor="playground-input">Try it. Type @, #, or /</label>
+        <span>Sample data</span>
+      </div>
+      <Mention.Input
+        ref={inputRef}
+        id="playground-input"
+        aria-describedby="playground-help"
+        disabled={!active}
+        value={value}
+        onChange={(event) => setValue(event.target.value)}
+        placeholder="Bring @someone into the conversation."
+        rows={3}
+        spellCheck={false}
+      />
+      <PlaygroundToolbar
+        insertTrigger={insertTrigger}
+        empty={value.length === 0}
+        helpId="playground-help"
+        clear={() => {
+          flushSync(() => setValue(""));
+          inputRef.current?.focus();
+          handleRef.current?.close();
+        }}
+      />
+      <PlaygroundCaption />
+      <PlaygroundSuggestions />
+    </Mention.Root>
+  );
+}
+
+export function MentionDemo() {
+  const [mode, setMode] = useState("textarea");
+  const [richLoaded, setRichLoaded] = useState(false);
+  const tabs = useRef<Array<HTMLButtonElement | null>>([]);
   return (
     <section
       id="playground"
@@ -92,87 +92,66 @@ export function MentionDemo() {
       aria-label="Live mention playground"
     >
       <div className="specimen">
-        <Mention.Root<{ "@": Person; "#": Topic; "/": Topic }>
-          triggers={triggers}
-          handleRef={handleRef}
-        >
-          <div className="specimen-heading">
-            <label htmlFor="playground-input">Try it. Type @, #, or /</label>
-            <span>Sample data</span>
-          </div>
-          <Mention.Input
-            ref={inputRef}
-            id="playground-input"
-            aria-describedby="playground-help"
-            value={value}
-            onChange={(event) => setValue(event.target.value)}
-            placeholder="Bring @someone into the conversation."
-            rows={3}
-            spellCheck={false}
-          />
-          <div className="specimen-toolbar">
-            <fieldset aria-label="Insert a trigger" className="trigger-buttons">
-              <button type="button" onClick={() => insertTrigger("@")}>
-                <span aria-hidden="true">@</span> People
-              </button>
-              <button type="button" onClick={() => insertTrigger("#")}>
-                <span aria-hidden="true">#</span> Channels
-              </button>
-              <button type="button" onClick={() => insertTrigger("/")}>
-                <span aria-hidden="true">/</span> Commands
-              </button>
-            </fieldset>
-            <button
-              className="clear-specimen"
-              type="button"
-              disabled={value.length === 0}
-              onClick={() => {
-                flushSync(() => setValue(""));
-                inputRef.current?.focus();
-                handleRef.current?.close();
-              }}
-            >
-              <Trash2 size={19} aria-hidden="true" /> Clear
-            </button>
-            <p id="playground-help">
-              Arrow keys to browse. Enter to select. Esc to close.
-            </p>
-          </div>
-          <Mention.Popover
-            className="specimen-popover"
-            aria-label="Suggestions"
+        <div className="specimen-mode-row">
+          <div
+            className="specimen-modes"
+            role="tablist"
+            aria-label="Editor type"
           >
-            <Mention.List<Person> trigger="@">
-              {(person) => (
-                <Mention.Item value={person} className="specimen-option">
-                  <span className="person-avatar" aria-hidden="true">
-                    {person.initials}
-                  </span>
-                  <span className="option-description">
-                    <strong>{person.name}</strong>
-                    <span>@{person.username}</span>
-                  </span>
-                </Mention.Item>
-              )}
-            </Mention.List>
-            {(["#", "/"] as const).map((trigger) => (
-              <Mention.List<Topic> trigger={trigger} key={trigger}>
-                {(topic) => (
-                  <Mention.Item value={topic} className="specimen-option">
-                    <span className="topic-symbol" aria-hidden="true">
-                      {trigger}
-                    </span>
-                    <span className="option-description">
-                      <strong>{topic.name}</strong>
-                      <span>{topic.description}</span>
-                    </span>
-                  </Mention.Item>
-                )}
-              </Mention.List>
+            {[
+              ["textarea", "Textarea"],
+              ["rich", "Rich editor"],
+            ].map(([value, label], index) => (
+              <button
+                key={value}
+                ref={(node) => {
+                  tabs.current[index] = node;
+                }}
+                type="button"
+                role="tab"
+                id={`playground-tab-${value}`}
+                aria-controls={`playground-panel-${value}`}
+                aria-selected={mode === value}
+                tabIndex={mode === value ? 0 : -1}
+                onClick={() => {
+                  setMode(value);
+                  if (value === "rich") setRichLoaded(true);
+                }}
+                onKeyDown={(event) => {
+                  let next: number;
+                  if (event.key === "ArrowLeft" || event.key === "ArrowRight")
+                    next = 1 - index;
+                  else if (event.key === "Home") next = 0;
+                  else if (event.key === "End") next = 1;
+                  else return;
+                  event.preventDefault();
+                  tabs.current[next]?.focus();
+                }}
+              >
+                {label}
+              </button>
             ))}
-            <Mention.Empty>No matches. Try a shorter search.</Mention.Empty>
-          </Mention.Popover>
-        </Mention.Root>
+          </div>
+          <span className="specimen-draft-note">
+            Each editor keeps its draft
+          </span>
+        </div>
+        <div
+          id="playground-panel-textarea"
+          role="tabpanel"
+          aria-labelledby="playground-tab-textarea"
+          hidden={mode !== "textarea"}
+        >
+          <TextareaPlayground active={mode === "textarea"} />
+        </div>
+        <div
+          id="playground-panel-rich"
+          role="tabpanel"
+          aria-labelledby="playground-tab-rich"
+          hidden={mode !== "rich"}
+        >
+          {richLoaded && <RichPlayground active={mode === "rich"} />}
+        </div>
       </div>
     </section>
   );

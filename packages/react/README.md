@@ -33,8 +33,12 @@ Use standard `value`, `onChange`, `onBlur`, `onKeyDown`, and `ref` props on `Men
 
 For multiple triggers, supply `triggers={{ "@": peopleConfig, "#": channelConfig }}` to Root or use `useMentionMulti()`. Each channel has `items`, `getKey`, `getLabel`, and optional `getInsertText`. Async fetchers receive `(query, signal)`; requests debounce for 150 ms by default. Obsolete results cannot be selected.
 
-Rich editors register an `EditorAdapter<T>` with `setEditor()`. The adapter reads one text region, measures the caret, and replaces a range using the editor's own transaction. The editor owns chips, formatting, clipboard data, and undo. See the executable [ProseMirror example](./examples/ProseMirror.tsx), which is exercised by browser tests. Other editor integrations need their own adapters and verification.
+Rich editors register an `EditorAdapter<T>` with `setEditor()`. The adapter reads one text region, measures the caret, and replaces a range using the editor's own transaction. The editor owns chips, formatting, clipboard data, and undo. See the executable [ProseMirror](./examples/ProseMirror.tsx) and [Lexical](./examples/Lexical.tsx) examples, exercised by browser tests. Other editor integrations need their own adapters and verification.
 
 Textareas retain their native textbox semantics. Rich editors supply their own textbox role and multiline state; Mention adds listbox and active-option relationships. Automated checks do not prove assistive-technology compatibility. See the [accessibility documentation](../../apps/docs/content/docs/accessibility.mdx) for the testing boundary.
 
 Run `bun run build`, `bun run test`, and `bun run test:e2e` from the repository root. The size budget is 14 kB gzipped, including Floating UI. The editor example is outside the published runtime.
+
+## Name matching
+
+By default, spaces end a query and arrays use case-insensitive label substring matching. Set `allowSpaces` per channel for full names, and supply a pure `filter(item, query)` for local accent folding or application-specific rules. Async fetcher results bypass this filter. Tabs, line breaks, and editor atoms always end a query. See [international input](https://reactmention.com/docs/recipes/i18n#name-matching).

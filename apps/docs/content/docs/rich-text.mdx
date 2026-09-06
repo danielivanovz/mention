@@ -5,7 +5,7 @@ description: Keep documents, chips, and undo inside the editor.
 
 Mention owns suggestions. Your editor owns the document and every edit to it. This includes mention nodes, selection, serialization, clipboard handling, and history.
 
-The ProseMirror example below uses real mention nodes and editor transactions. This is the currently implemented editor example; other editors require their own adapter. Its browser tests cover inserting mentions across paragraphs, preserving formatting during paste, undo, redo, and node deletion.
+The ProseMirror example below uses real mention nodes and editor transactions. [The Lexical integration](/docs/lexical) provides a second executable example with its own nodes, selection mapping, clipboard serialization, and history. Its browser tests cover inserting mentions across paragraphs, preserving formatting during paste, undo, redo, and node deletion.
 
 ## Try ProseMirror
 
@@ -33,7 +33,7 @@ Offsets in `EditorSnapshot` and `MentionEdit` use UTF-16 and must agree. The Pro
 
 The repository example at `packages/react/examples/ProseMirror.tsx` also demonstrates schema serialization and history grouping.
 
-Other editors can use this interface, but their adapters need independent validation against their selection and transaction models. The ProseMirror example does not establish compatibility with Lexical, Tiptap, or Slate.
+Other editors can use this interface, but their adapters need independent validation against their selection and transaction models. The ProseMirror and [Lexical](/docs/lexical) examples each have their own browser tests; they do not establish compatibility with Tiptap, Slate, or other editors.
 
 ## Copy the full implementation
 

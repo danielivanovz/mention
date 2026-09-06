@@ -216,6 +216,14 @@ Editing-host choices are substantial outlined links on a lightly mixed sheet gro
 
 The live textarea has a visible associated label, a sheet ground, an ink stroke, and the shared control corners. The landing input deliberately uses larger reading type; documentation inputs keep the article's density. The specimen's keyboard focus uses an ink outline (two pixels, three-pixel offset). The textarea is vertically resizable. Documentation examples sit in a raised sheet with a base-sheet input, associated labels and hints, and 44px form actions. Validation appears beside its field; a persistent status area holds the local submission receipt. The running composer, form, and editor examples share their source with the adjacent code blocks.
 
+### Editor Modes
+
+Textarea and Rich editor tabs sit above the landing field in a compact outlined group. The selected tab uses Foundry Ink with Blue Proof text; the group uses control corners and its 44px tab targets use inset corners. Left/Right Arrow, Home, and End move focus; Enter, Space, or click activates the choice. Focus and selection remain distinct, with no decorative transition.
+
+Each editor stays mounted after first use, preserving its independent draft and host-owned history when switching. Rich mode loads Lexical on first activation and shows a local loading status in the field's existing shape. Both modes share the broad writing field, visible associated label, trigger controls, and caret suggestions. A small caption below the controls describes the active host and links directly to its integration guide through an underlined link with the existing Lucide arrow icon. The tab row and caption wrap at narrow widths.
+
+Structured mention tokens in the landing and documentation editors use the existing editing-host ground and foreground colors: Blue Proof with ink text in light mode and the corresponding dark theme pair. Small inset corners (4px) and slight inline padding distinguish inserted tokens while keeping them within the surrounding reading type.
+
 ### Navigation
 
 One persistent ink header owns the wordmark, primary links, search, and theme switch across landing and docs. It is 64px high on desktop and 56px below 768px; the logo keeps identical coordinates between routes. Its wordmark and utilities have 44px targets. The Docs link marks the current section with a quiet underline. Documentation uses a raised-sheet sidebar headed Documentation, without a second logo or a desktop collapse mode. Sidebar links are 40px on desktop and 44px on mobile. The mobile section list and Browse docs trigger share one bar. Sticky offsets derive from the shared header height, including anchor navigation.

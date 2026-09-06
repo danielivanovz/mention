@@ -1,0 +1,44 @@
+---
+title: Lexical
+description: Keep mention tokens, formatting, clipboard data, and history in Lexical.
+---
+
+Connect Mention to Lexical through an `EditorAdapter`. Mention supplies the suggestions; Lexical inserts a token node in its own transaction. The example uses Lexical 0.50's extension composer with `RichTextExtension` and `HistoryExtension`.
+
+## Try the integration
+
+Type `@Al`, select Alice, then continue writing. Insert another mention in a new paragraph, copy and paste it, or undo the insertion. **Save snapshot** stores the editor's JSON in this example's memory; **Restore snapshot** reloads that document, including mention IDs and formatting. Reloading this page discards the snapshot.
+
+<div className="docs-example not-prose">
+  <LexicalDemo />
+</div>
+
+## Own the document
+
+`MentionNode` extends Lexical's `TextNode` in token mode, so Backspace removes a complete mention. Its node state stores the stable item ID, display name, and channel trigger, while the text is the channel's formatted insertion. Lexical handles formatting, history, JSON serialization, and its native clipboard format. The node's DOM conversion preserves its ID and label when pasted as HTML; plain-text destinations receive its readable text.
+
+Treat imported IDs as application data. A copied or saved mention is not evidence that a person exists or that the current user may notify them; resolve and validate references in your application.
+
+Derive the remaining mention inventory from the document. `onSelect` reports an insertion and does not track later deletion, paste, or undo.
+
+## Map selection without flattening the document
+
+The adapter scans one block at the collapsed selection. Normal text contributes UTF-16 offsets, including across differently formatted text nodes. Existing tokens contribute a single `\uFFFC` placeholder. A block's key distinguishes otherwise identical paragraphs.
+
+The insertion translates those offsets back into Lexical text points and applies a single transaction. It preserves the active formatting and the separator chosen by Mention. The editor returns no snapshot while unfocused, inactive, or composing; editor updates refresh the suggestion session. The example uses Lexical's DOM selection to measure the caret and keeps keyboard focus in the editing host.
+
+## Copy the full implementation
+
+Install the editor dependencies alongside Mention:
+
+```sh title="Install Lexical"
+npm install lexical@0.50.0 @lexical/react@0.50.0 @lexical/rich-text@0.50.0 @lexical/history@0.50.0
+```
+
+Import `@danielivanov/mention/styles.css` for the default suggestion styles. Add your own styles for `.mention-token` and `.lexical-editor`. The file below is used by this page, the landing's rich-editor mode, and the browser fixtures. `LexicalMentionEditor` and its small handle are example-level application code, not additional exports from Mention.
+
+<include meta='title="Lexical.tsx"'>../../../../packages/react/examples/Lexical.tsx</include>
+
+The example deliberately does not add editor dependencies to Mention's runtime package or provide a generic persistence layer. Adapt nodes, parsing, and history to your application's schema. See [editor ownership](/docs/internals) for the contract and [accessibility](/docs/accessibility) for the remaining real-device and assistive-technology checks.
+
+The example opts into full-name queries and local accent folding: `@jose gar` matches José García. Both policies are supplied per channel; see [name matching](/docs/recipes/i18n#name-matching).

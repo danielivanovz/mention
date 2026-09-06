@@ -43,11 +43,13 @@ This is a factual architectural distinction, not evidence of market superiority,
 ## Capabilities and Constraints
 
 - Multiple triggers can share one host, with separate typed item channels.
+- Queries can opt into horizontal spaces per channel for full-name search. Arrays accept a pure synchronous `filter`; the default remains case-insensitive label substring matching. The landing and Lexical examples opt into accent folding for their sample names.
 - Static and asynchronous items are supported. Async fetchers receive a query and `AbortSignal`; the implementation prevents obsolete results from being selected. A failed search hides the suggestion list and can be retried through the existing explicit open action. The executable async example demonstrates application-owned status text and a Retry search action without changing the query.
 - Keyboard navigation, caret positioning, composition-aware event handling, controlled textarea props, custom option rendering, and optional styles are implemented.
 - `Mention.Root`, `Mention.Input`, `Mention.Popover`, `Mention.List`, `Mention.Item`, and the associated hooks are the current API. Do not reintroduce deleted editable/chip APIs in examples or copy.
-- The quickstart composer, controlled form, asynchronous search, and ProseMirror demos import the actual example components. Fumadocs includes those same source files in HTML code blocks and processed Markdown; no separate snippets or export generator are maintained.
-- The executable ProseMirror example demonstrates editor-owned mention nodes and transactions. It does not establish verified adapters for Lexical, Tiptap, Slate, or other editors.
+- The quickstart composer, controlled form, asynchronous search, ProseMirror, and Lexical demos import the actual example components. Fumadocs includes those same source files in HTML code blocks and processed Markdown; no separate snippets or export generator are maintained.
+- The executable ProseMirror and Lexical examples demonstrate editor-owned mention nodes, formatting, transactions, clipboard data, and history. They do not establish verified adapters for Tiptap, Slate, or other editors. Lexical stays an example dependency and adds no library runtime dependency.
+- The landing playground switches between a native textarea and the maintained Lexical host. Each mode retains its own draft and history while mounted; switching does not convert documents. Lexical loads on demand. Each mode links to its integration guide.
 - Native textarea undo grouping remains browser-defined. Rich-editor history belongs to the editor.
 - The user states the product is not used yet. No announcements, compatibility theater, or fabricated migration obligations are needed for this redesign.
 - **Delegated decision:** This work may replace the website's visual identity, information architecture, copy structure, navigation, and agent-facing documentation delivery. Preserve actual product behavior and factual content. The subsequent user-authorized integration pass separately addresses the textarea role conflict and verifies form behavior, including repeated queries after dismissal and reset. That pass also fixes document scrolling caused by revealing a suggestion: only the listbox now scrolls.
@@ -66,7 +68,7 @@ The established product name is Mention and the package identifier is `@danieliv
 
 - `../../packages/react/README.md` and `../../packages/react/package.json`: package identity, supported React version, license, API shape, architecture, and declared size budget.
 - `../../packages/react/src/`: current implementation and typed contracts.
-- `../../packages/react/examples/ProseMirror.tsx`: executable rich-editor integration.
+- `../../packages/react/examples/ProseMirror.tsx` and `../../packages/react/examples/Lexical.tsx`: executable rich-editor integrations.
 - `../../packages/react/e2e/`: browser checks for interaction contracts, editing, editor integration, and automated accessibility findings.
 - `content/docs/`: maintained product explanations and recipes.
 - `content/docs/accessibility.mdx`: textbox/listbox semantics, recorded automated findings, and manual verification limits.

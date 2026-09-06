@@ -6,6 +6,7 @@ import { Composer } from "../../../../packages/react/examples/Composer";
 import { MessageForm } from "../../../../packages/react/examples/MessageForm";
 import { ProseMirrorDemo } from "../../../../packages/react/examples/ProseMirror";
 import { DocsCodeBlock } from "./code-block";
+import { LexicalDemo } from "./lexical-docs-demo";
 
 export function getMDXComponents(components?: MDXComponents) {
   return {
@@ -16,6 +17,7 @@ export function getMDXComponents(components?: MDXComponents) {
       </DocsCodeBlock>
     ),
     ProseMirrorDemo,
+    LexicalDemo,
     Composer,
     MessageForm,
     AsyncSearch,

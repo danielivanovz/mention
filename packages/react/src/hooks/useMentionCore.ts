@@ -26,6 +26,28 @@ interface Session {
   trigger: string;
   query: string;
 }
+interface Dismissal extends EditorSnapshot {
+  triggerOffset: number | undefined;
+}
+function resolveActive(
+  snapshot: EditorSnapshot,
+  channels: CoreProps["channels"],
+) {
+  const active = findActiveMention(
+    snapshot.text,
+    snapshot.caret,
+    Object.keys(channels),
+    {
+      allowSpaces: Object.values(channels).some(
+        (channel) => channel.allowSpaces,
+      ),
+    },
+  );
+  return active &&
+    (channels[active.trigger]?.allowSpaces || !/\s/u.test(active.query))
+    ? active
+    : null;
+}
 function sameSnapshot(a: EditorSnapshot | null, b: EditorSnapshot | null) {
   return (
     a !== null &&
@@ -50,7 +72,7 @@ export function useMentionCore<T = unknown>(props: CoreProps): CoreReturn<T> {
     session: Session;
     index: number;
   } | null>(null);
-  const dismissed = useRef<EditorSnapshot | null>(null);
+  const dismissed = useRef<Dismissal | null>(null);
   const composing = useRef(false);
   const canceledPress = useRef<EventTarget | null>(null);
   const mouseMoving = useRef<() => boolean>(() => false);
@@ -88,21 +110,42 @@ export function useMentionCore<T = unknown>(props: CoreProps): CoreReturn<T> {
   );
 
   const close = useCallback(() => {
-    dismissed.current = editorRef.current?.read() ?? null;
+    const snapshot = editorRef.current?.read() ?? null;
+    const active =
+      snapshot && resolveActive(snapshot, live.current.props.channels);
+    dismissed.current = snapshot && {
+      ...snapshot,
+      triggerOffset:
+        active && live.current.props.channels[active.trigger]?.allowSpaces
+          ? snapshot.caret - active.query.length - active.trigger.length
+          : undefined,
+    };
     setSession(null);
-  }, []);
+  }, [live]);
   const refresh = useCallback(() => {
     if (composing.current) return;
     const snapshot = editorRef.current?.read() ?? null;
-    if (!sameSnapshot(snapshot, dismissed.current)) dismissed.current = null;
     const active = snapshot
-      ? findActiveMention(
-          snapshot.text,
-          snapshot.caret,
-          Object.keys(live.current.props.channels),
-        )
+      ? resolveActive(snapshot, live.current.props.channels)
       : null;
-    if (!snapshot || !active || sameSnapshot(snapshot, dismissed.current)) {
+    const previousDismissal = dismissed.current;
+    // Continuing after a multiword selection or Escape must not reopen its old trigger.
+    // Editing back into the query or starting a new trigger makes it eligible again.
+    const continuesDismissal =
+      snapshot &&
+      active &&
+      previousDismissal &&
+      previousDismissal.triggerOffset !== undefined &&
+      live.current.props.channels[active.trigger]?.allowSpaces &&
+      snapshot.key === previousDismissal.key &&
+      snapshot.caret >= previousDismissal.caret &&
+      snapshot.caret - active.query.length - active.trigger.length ===
+        previousDismissal.triggerOffset &&
+      snapshot.text.slice(0, previousDismissal.caret) ===
+        previousDismissal.text.slice(0, previousDismissal.caret);
+    if (!sameSnapshot(snapshot, previousDismissal) && !continuesDismissal)
+      dismissed.current = null;
+    if (!snapshot || !active || dismissed.current) {
       setSession(null);
       return;
     }

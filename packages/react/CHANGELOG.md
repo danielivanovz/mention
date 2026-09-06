@@ -1,5 +1,15 @@
 # @danielivanov/mention
 
+## 0.2.0
+
+### Minor Changes
+
+- Add per-channel `allowSpaces` and synchronous `filter(item, query)` for full-name and application-defined matching. Keep completed or dismissed multiword queries closed while continuing the sentence.
+
+  Rich editors now own document edits and history through `EditorAdapter<T>` and `setEditor()`. Replace the former `Mention.Editable`, chip management, and registry APIs with the maintained ProseMirror or Lexical integration examples. Native textareas retain normal React values, handlers, refs, and form props.
+
+  Complete pointer selection on click so dragging away cancels. Preserve composition handling, reject stale requests and changed selections, retry failed queries through explicit opening, and scroll suggestions without moving the page.
+
 ## 0.1.0
 
 ### Minor Changes
