@@ -125,10 +125,11 @@ export function MentionDemo() {
             <button
               className="clear-specimen"
               type="button"
+              disabled={value.length === 0}
               onClick={() => {
-                setValue("");
-                handleRef.current?.close();
+                flushSync(() => setValue(""));
                 inputRef.current?.focus();
+                handleRef.current?.close();
               }}
             >
               <Trash2 size={19} aria-hidden="true" /> Clear
