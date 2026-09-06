@@ -150,6 +150,7 @@ export function MentionDemo() {
                   </span>
                   <span className="option-description">
                     <strong>{person.name}</strong>
+                    <span>@{person.username}</span>
                   </span>
                 </Mention.Item>
               )}
