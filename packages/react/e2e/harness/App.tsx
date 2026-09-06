@@ -82,7 +82,14 @@ export function App() {
     );
   const inPlace = params.get("popup") === "inline";
   const isIME = params.get("ime") === "1";
-  const activeUsers = isIME ? imeUsers : users;
+  const natural = params.get("natural") === "1";
+  const activeUsers = isIME
+    ? imeUsers
+    : natural
+      ? [...users, { id: "jose", name: "José García", username: "jose" }]
+      : users;
+  const fold = (text: string) =>
+    text.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
 
   return (
     <main style={{ maxWidth: 720, margin: "2rem auto", padding: "1rem" }}>
@@ -99,6 +106,13 @@ export function App() {
       </label>
       <Mention.Root<User>
         items={activeUsers}
+        allowSpaces={natural}
+        {...(natural
+          ? {
+              filter: (user: User, query: string) =>
+                fold(`${user.name} ${user.username}`).includes(fold(query)),
+            }
+          : {})}
         getKey={(u) => u.id}
         getLabel={(u) => u.username}
         getInsertText={(u) => `@${u.username}`}

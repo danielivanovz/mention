@@ -40,3 +40,5 @@ Import `@danielivanov/mention/styles.css` for the default suggestion styles. Add
 <include meta='title="Lexical.tsx"'>../../../../packages/react/examples/Lexical.tsx</include>
 
 The example deliberately does not add editor dependencies to Mention's runtime package or provide a generic persistence layer. Adapt nodes, parsing, and history to your application's schema. See [editor ownership](/docs/internals) for the contract and [accessibility](/docs/accessibility) for the remaining real-device and assistive-technology checks.
+
+The example opts into full-name queries and local accent folding: `@jose gar` matches José García. Both policies are supplied per channel; see [name matching](/docs/recipes/i18n#name-matching).

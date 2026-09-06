@@ -429,6 +429,12 @@ export function LexicalDemo() {
   return (
     <Mention.Root<MentionValue>
       items={people}
+      allowSpaces
+      filter={(person, query) => {
+        const fold = (text: string) =>
+          text.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+        return fold(person.name).includes(fold(query));
+      }}
       getKey={(person) => person.id}
       getLabel={(person) => person.name}
     >
