@@ -43,15 +43,15 @@ This is a factual architectural distinction, not evidence of market superiority,
 ## Capabilities and Constraints
 
 - Multiple triggers can share one host, with separate typed item channels.
-- Static and asynchronous items are supported. Async fetchers receive a query and `AbortSignal`; the implementation prevents obsolete results from being selected.
+- Static and asynchronous items are supported. Async fetchers receive a query and `AbortSignal`; the implementation prevents obsolete results from being selected. A failed search hides the suggestion list and can be retried through the existing explicit open action. The executable async example demonstrates application-owned status text and a Retry search action without changing the query.
 - Keyboard navigation, caret positioning, composition-aware event handling, controlled textarea props, custom option rendering, and optional styles are implemented.
 - `Mention.Root`, `Mention.Input`, `Mention.Popover`, `Mention.List`, `Mention.Item`, and the associated hooks are the current API. Do not reintroduce deleted editable/chip APIs in examples or copy.
-- The quickstart composer, controlled form, and ProseMirror demos import the actual example components. Fumadocs includes those same source files in HTML code blocks and processed Markdown; no separate snippets or export generator are maintained.
+- The quickstart composer, controlled form, asynchronous search, and ProseMirror demos import the actual example components. Fumadocs includes those same source files in HTML code blocks and processed Markdown; no separate snippets or export generator are maintained.
 - The executable ProseMirror example demonstrates editor-owned mention nodes and transactions. It does not establish verified adapters for Lexical, Tiptap, Slate, or other editors.
 - Native textarea undo grouping remains browser-defined. Rich-editor history belongs to the editor.
 - The user states the product is not used yet. No announcements, compatibility theater, or fabricated migration obligations are needed for this redesign.
 - **Delegated decision:** This work may replace the website's visual identity, information architecture, copy structure, navigation, and agent-facing documentation delivery. Preserve actual product behavior and factual content. The subsequent user-authorized integration pass separately addresses the textarea role conflict and verifies form behavior, including repeated queries after dismissal and reset. That pass also fixes document scrolling caused by revealing a suggestion: only the listbox now scrolls.
-- The user requires approval before deployment unless explicitly authorized. No deployment authorization has been given for this redesign.
+- Deployment requires explicit user authorization. The user has authorized merging and deploying the five improvements from the microinteraction review; this does not grant standing authorization for later deployments.
 - **Open decision:** Additional editor adapters should follow independently verified implementations. No date or compatibility commitment is established.
 - Agent setup is a small preview-and-copy action on the landing page and documentation. Its prompt guides the user's coding agent through the existing docs; it does not configure an agent, provide credentials, or claim a hosted integration.
 - **Open decision:** A downloadable agent skill may be considered if observed integration failures justify it. A chatbot, hosted MCP service, or separate agent platform is not an established product requirement.

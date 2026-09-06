@@ -20,6 +20,8 @@ The host supplies its text-editing semantics. A textarea keeps its implicit `tex
 
 The popup receives `role="listbox"`, its generated ID, and `aria-busy` while loading. Each rendered option receives its generated ID, `role="option"`, and `aria-selected`. The first result is highlighted by default in a new session. An empty, loading, or failed result set has no active option.
 
+A failed request hides the popup and omits `aria-controls`, while preserving the failed session for an explicit retry. The [async search example](/docs/recipes/async-items) supplies a persistent status region and a recovery button outside the listbox. The application owns their wording; the library does not insert extra announcements during option navigation.
+
 Render the list and its items with the matching props; conditionally removing the active item can break the ID relationship. Supply an accessible name for both the editor and the listbox. The core does not invent those labels.
 
 ## Focus stays with the host
