@@ -1,0 +1,54 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "mention",
+  "homepage": "https://reactmention.com",
+  "items": [
+    {
+      "name": "ai-composer",
+      "type": "registry:block",
+      "title": "AI composer with document mentions",
+      "description": "A shadcn/ui and AI SDK 7 composer with Lexical-owned reference IDs, keyboard selection, streaming messages, and retry. Includes server-side reference resolution; bring your authorized document lookup and model route.",
+      "dependencies": [
+        "@danielivanov/mention@^0.2.0",
+        "ai@^7.0.93",
+        "@ai-sdk/react@^4.0.96",
+        "lexical@0.50.0",
+        "@lexical/react@0.50.0",
+        "@lexical/rich-text@0.50.0",
+        "@lexical/history@0.50.0",
+        "lucide-react",
+        "zod@^4.4.2",
+        "class-variance-authority@^0.7.1"
+      ],
+      "registryDependencies": [
+        "input-group",
+        "message",
+        "message-scroller",
+        "bubble"
+      ],
+      "files": [
+        {
+          "path": "packages/react/examples/registry/default/ai-composer/ai-composer.tsx",
+          "type": "registry:component",
+          "target": "@components/ai-composer/ai-composer.tsx"
+        },
+        {
+          "path": "packages/react/examples/registry/default/ai-composer/mention-editor.tsx",
+          "type": "registry:component",
+          "target": "@components/ai-composer/mention-editor.tsx"
+        },
+        {
+          "path": "packages/react/examples/registry/default/ai-composer/context-message.ts",
+          "type": "registry:component",
+          "target": "@components/ai-composer/context-message.ts"
+        },
+        {
+          "path": "packages/react/examples/registry/default/ai-composer/resolve-context.ts",
+          "type": "registry:component",
+          "target": "@components/ai-composer/resolve-context.ts"
+        }
+      ],
+      "docs": "Requires React 19. Render AiComposer with your document suggestions. Its default transport posts to /api/chat; configure your AI SDK 7 route and call resolveContextMessages with an authenticated document resolver before passing messages to the model. Helpers and sample data are not installed. See https://reactmention.com/docs/ai-composer."
+    }
+  ]
+}

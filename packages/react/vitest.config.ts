@@ -13,7 +13,7 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   test: {
     environment: "node",
-    include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
+    include: ["src/**/*.test.ts", "src/**/*.test.tsx", "examples/*.test.ts"],
     // *.browser.test.ts(x) runs under @vitest/browser via
     // vitest.browser.config.ts — skip in the default (happy-dom/node)
     // run so the caret browser tests aren't executed in an env that

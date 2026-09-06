@@ -218,11 +218,13 @@ The live textarea has a visible associated label, a sheet ground, an ink stroke,
 
 ### Editor Modes
 
-Textarea and Rich editor tabs sit above the landing field in a compact outlined group. The selected tab uses Foundry Ink with Blue Proof text; the group uses control corners and its 44px tab targets use inset corners. Left/Right Arrow, Home, and End move focus; Enter, Space, or click activates the choice. Focus and selection remain distinct, with no decorative transition.
+Textarea, Rich editor, and AI composer tabs sit above the landing field in a compact outlined group. The selected tab uses Foundry Ink with Blue Proof text; the group uses control corners and its 44px tab targets use inset corners. Left/Right Arrow, Home, and End move focus; Enter, Space, or click activates the choice. Focus and selection remain distinct, with no decorative transition.
 
-Each editor stays mounted after first use, preserving its independent draft and host-owned history when switching. Rich mode loads Lexical on first activation and shows a local loading status in the field's existing shape. Both modes share the broad writing field, visible associated label, trigger controls, and caret suggestions. A small caption below the controls describes the active host and links directly to its integration guide through an underlined link with the existing Lucide arrow icon. The tab row and caption wrap at narrow widths.
+Each editor stays mounted after first use, preserving its independent draft and host-owned history when switching. Rich mode loads Lexical on first activation and shows a local loading status in the field's existing shape. Textarea and Rich editor share the broad writing field, visible associated label, trigger controls, and caret suggestions. A small caption below the controls describes the active host and links directly to its integration guide through an underlined link with the existing Lucide arrow icon. The tab row and caption wrap at narrow widths.
 
 Structured mention tokens in the landing and documentation editors use the existing editing-host ground and foreground colors: Blue Proof with ink text in light mode and the corresponding dark theme pair. Small inset corners (4px) and slight inline padding distinguish inserted tokens while keeping them within the surrounding reading type.
+
+The lazy AI composer extends this group with the same sheet ground and control corners. Its shadcn/ui controls map to the existing semantic theme colors; they introduce no additional palette. A focus outline identifies the complete input group, while conversation text and labels retain the reading face. Document references use a muted ground and foreground pair, and user-message bubbles use the existing raised sheet. The demo heading and sample-response note wrap with an explicit gap in both landing and documentation contexts. The [AI composer surface brief](.impeccable/surfaces/src-components-ai-composer-demo-tsx.md) records its local demonstration states and integration scope.
 
 ### Navigation
 

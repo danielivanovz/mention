@@ -28,6 +28,8 @@ Set `NEXT_PUBLIC_GIT_REF` or provide `VERCEL_GIT_COMMIT_SHA` to show source link
 
 `content/docs` is the shared source for browser articles, search, Markdown, and coding-agent prompts. Internals live in `content/docs/internals`, alongside integration and verification guides. The former `/internals` URLs redirect to their docs equivalents.
 
+The AI composer guide includes the registry's actual four source files. The playground and guide load the same demo wrapper on demand; `@shadcn/helpers` stays in that wrapper. shadcn components under `src/components/ui` were retrieved from the official registry with CLI 4.21.0. The website maps their semantic colors to the existing Mention palette. Do not copy site styles or the scripted transport into the installable item.
+
 - `src/components/site-header.tsx`: shared navigation.
 - `src/lib/source.ts`: article loading and Markdown export.
 - `src/lib/site.ts`: deployment metadata origin and URL construction.
