@@ -1,6 +1,7 @@
 import { Mention } from "@danielivanov/mention";
 import { AsyncSearch } from "../../examples/AsyncSearch.tsx";
 import { Composer } from "../../examples/Composer.tsx";
+import { LexicalDemo } from "../../examples/Lexical.tsx";
 import { MessageForm } from "../../examples/MessageForm.tsx";
 import { ProseMirrorDemo } from "../../examples/ProseMirror.tsx";
 import { Controlled } from "./Controlled.tsx";
@@ -52,6 +53,13 @@ export function App() {
       <main>
         <h1>Controlled form</h1>
         <MessageForm />
+      </main>
+    );
+  if (params.get("example") === "lexical")
+    return (
+      <main>
+        <h1>Lexical integration</h1>
+        <LexicalDemo />
       </main>
     );
   if (params.get("example") === "async")
