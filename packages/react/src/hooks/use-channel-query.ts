@@ -63,7 +63,9 @@ export function useChannelQuery({
   if (typeof channel.items !== "function") {
     return {
       items: channel.items.filter((item) =>
-        channel.getLabel(item).toLowerCase().includes(query.toLowerCase()),
+        channel.filter
+          ? channel.filter(item, query)
+          : channel.getLabel(item).toLowerCase().includes(query.toLowerCase()),
       ),
       status: "success",
     };

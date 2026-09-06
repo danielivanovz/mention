@@ -12,6 +12,8 @@ description: Components, hooks, and editor transactions.
 | `items` | Array of items, or `(query, signal) => Promise<readonly T[]>`. |
 | `getKey` | Unique, stable string or number for each item. |
 | `getLabel` | Search label and default insertion label. |
+| `allowSpaces` | Allow horizontal spaces in this channel’s query. Defaults to false; tabs, line breaks, and editor atoms still stop detection. |
+| `filter` | Optional synchronous `(item, query) => boolean` for arrays. Defaults to case-insensitive label substring matching; fetcher results bypass it. |
 | `trigger` | One non-whitespace UTF-16 character; defaults to `@`. |
 | `getInsertText` | Optional `(item, meta) => string`. Defaults to trigger + label. |
 | `onSelect` | Optional notification after successful insertion. |
@@ -19,7 +21,7 @@ description: Components, hooks, and editor transactions.
 
 A separating space is appended when neither the insertion nor the following text already supplies whitespace.
 
-For multiple channels, Root and `useMentionMulti<M>()` accept a `triggers` map instead of a single channel. Each channel has `items`, `getKey`, `getLabel`, and optional `getInsertText`. The multi-channel `onSelect` payload is keyed by the active trigger, for example `{ "@": person }`.
+For multiple channels, Root and `useMentionMulti<M>()` accept a `triggers` map instead of a single channel. Each channel has `items`, `getKey`, `getLabel`, and optional `getInsertText`, `allowSpaces`, and `filter`. The multi-channel `onSelect` payload is keyed by the active trigger, for example `{ "@": person }`.
 
 Root also accepts `children`, `unstyled`, and `handleRef`. The handle exposes `open()`, `close()`, `commit(item)`, and `host`. Opening rescans the existing text at the caret and retries a failed query; it does not insert a trigger or duplicate a pending or successful request.
 
@@ -90,4 +92,6 @@ See [the working editor integration](/docs/rich-text).
 
 ## Detection utility
 
-`findActiveMention(value, caret, trigger = "@")` returns `{ trigger, query }` or null. The trigger can also be an array of characters. It scans backwards from the caret and suppresses mid-word triggers, with soft boundaries for selected Unicode scripts.
+`findActiveMention(value, caret, trigger = "@", { allowSpaces: false })` returns `{ trigger, query }` or null. The trigger can also be an array of characters. It scans backwards from the caret and suppresses mid-word triggers, with soft boundaries for selected Unicode scripts.
+
+Pass `{ allowSpaces: true }` to allow Unicode horizontal space separators (`Zs`) in the query. Tabs, line breaks, and `U+FFFC` editor atoms always stop the scan. See [name matching](/docs/recipes/i18n#name-matching) for an opt-in local filter.

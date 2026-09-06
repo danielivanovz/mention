@@ -7,17 +7,17 @@ A query string is not enough to identify a request. Two paragraphs can contain t
 
 ## Detect the active query
 
-The detector scans backward from the collapsed caret. It accepts a configured trigger at the start of the region, after whitespace, or after a character from a supported non-whitespace-segmented script. It stops at whitespace or an ineligible trigger. `foo@bar` does not open a session.
+The detector scans backward from the collapsed caret. It accepts a configured trigger at the start of the region, after whitespace, or after a character from a supported non-whitespace-segmented script. It stops at an ineligible trigger, an editor atom (`U+FFFC`), or whitespace other than horizontal space separators explicitly allowed by the channel. `foo@bar` does not open a session.
 
-Triggers are one non-whitespace UTF-16 character. Queries cannot contain whitespace. Script boundaries are a character-level heuristic; the [international input guide](/docs/recipes/i18n) documents the supported scripts and the Han-plus-email ambiguity.
+Triggers are one non-whitespace UTF-16 character. Queries can contain horizontal space separators when `allowSpaces` is true; tabs and line breaks always end them. Script boundaries are a character-level heuristic; the [international input guide](/docs/recipes/i18n) documents the supported scripts and the Han-plus-email ambiguity.
 
-`refresh()` keeps the same session object when its text, caret, key, trigger, and query are unchanged. A meaningful change creates a new session. Closing remembers the dismissed snapshot so an unchanged refresh does not immediately reopen it; `setOpen(true)` clears that dismissal and rescans. If the current request failed, explicit opening first discards that failed session so the same snapshot gets a fresh request identity. Ordinary refreshes do not retry a failure, and reopening a pending or successful session does not duplicate its request.
+`refresh()` keeps the same session object when its text, caret, key, trigger, and query are unchanged. A meaningful change creates a new session. Closing remembers the dismissed snapshot so an unchanged refresh does not immediately reopen it. For `allowSpaces` channels, forward typing that retains the dismissed prefix and trigger position also stays closed; `setOpen(true)` clears that dismissal and rescans. If the current request failed, explicit opening first discards that failed session so the same snapshot gets a fresh request identity. Ordinary refreshes do not retry a failure, and reopening a pending or successful session does not duplicate its request.
 
 ## Arrays and fetchers take different paths
 
 | Item source | Current behavior |
 | --- | --- |
-| Array | Filter labels during render using a case-insensitive substring match; status is `success`. |
+| Array | Filter during render with the channel’s `filter`, or a case-insensitive label substring match by default; status is `success`. |
 | Fetcher | Wait for the debounce delay, then call the fetcher with the query and an `AbortSignal`. |
 
 The default async debounce is 150 ms. A session reports `loading` during that delay and while the request is pending. A resolved empty array is a successful empty result; a thrown or rejected request reports `error`. A failed session reports `open: false`: its popup and editor suggestion relationships disappear, but its query and failure remain available for explicit retry. There is no built-in cache, ranking, pagination, or automatic retry.

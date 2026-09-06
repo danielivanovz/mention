@@ -32,7 +32,7 @@ Arrow navigation changes the highlight and reveals the active option by scrollin
 
 ## Keys are handled conditionally
 
-Unmodified ArrowUp and ArrowDown wrap through available items. Enter or Tab commits only when there is a current item and the host snapshot is unchanged. A successful Tab commit prevents the browser's normal focus move; a later Tab without a selectable result can move focus normally. Escape dismisses the session without editing the text. Refreshing the unchanged snapshot keeps it dismissed. Once the text, caret, or region changes, that dismissal is cleared; returning to the original query can open suggestions again.
+Unmodified ArrowUp and ArrowDown wrap through available items. Enter or Tab commits only when there is a current item and the host snapshot is unchanged. A successful Tab commit prevents the browser's normal focus move; a later Tab without a selectable result can move focus normally. Escape dismisses the session without editing the text. Refreshing the unchanged snapshot keeps it dismissed. For default channels, a changed text, caret, or region clears dismissal. With `allowSpaces`, continuing forward from the same dismissed query also stays closed; a new trigger, an earlier edit, or explicit opening can make it eligible again. This prevents typing after a selected full name from reopening its old trigger.
 
 The core leaves modified keys, already-prevented events, and composition keystrokes to the host. Consumer textarea key handlers run first and can prevent Mention's handling. Blur and outside pointer interaction close the session.
 

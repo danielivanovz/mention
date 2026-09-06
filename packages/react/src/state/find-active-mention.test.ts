@@ -247,3 +247,25 @@ it("rejects caret offsets outside the supplied text", () => {
   for (const caret of [-1, 0.5, 3, Infinity, NaN])
     expect(findActiveMention("@a", caret)).toBeNull();
 });
+
+it("allows horizontal spaces only when opted in, preserving UTF-16 offsets", () => {
+  for (const space of [" ", "\u00A0", "\u3000"]) {
+    const text = `😀 @Alice${space}Ch`;
+    expect(findActiveMention(text, text.length)).toBeNull();
+    expect(
+      findActiveMention(text, text.length, "@", { allowSpaces: true }),
+    ).toEqual({ trigger: "@", query: `Alice${space}Ch` });
+  }
+});
+it("never scans across a newline, tab, or editor atom", () => {
+  for (const boundary of ["\n", "\r", "\t", "\u2028", "\u2029", "\uFFFC"]) {
+    const text = `@Alice${boundary}Chen`;
+    expect(
+      findActiveMention(text, text.length, "@", { allowSpaces: true }),
+    ).toBeNull();
+  }
+  expect(findActiveMention("\uFFFC@a", 3)).toEqual({
+    trigger: "@",
+    query: "a",
+  });
+});
