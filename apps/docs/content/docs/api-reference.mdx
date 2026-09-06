@@ -21,7 +21,7 @@ A separating space is appended when neither the insertion nor the following text
 
 For multiple channels, Root and `useMentionMulti<M>()` accept a `triggers` map instead of a single channel. Each channel has `items`, `getKey`, `getLabel`, and optional `getInsertText`. The multi-channel `onSelect` payload is keyed by the active trigger, for example `{ "@": person }`.
 
-Root also accepts `children`, `unstyled`, and `handleRef`. The handle exposes `open()`, `close()`, `commit(item)`, and `host`. Opening rescans the existing text at the caret; it does not insert a trigger.
+Root also accepts `children`, `unstyled`, and `handleRef`. The handle exposes `open()`, `close()`, `commit(item)`, and `host`. Opening rescans the existing text at the caret and retries a failed query; it does not insert a trigger or duplicate a pending or successful request.
 
 `MentionSelectMeta` contains `trigger`, `query`, and `triggerOffset`. Offsets use UTF-16 within the adapter's current text region.
 
@@ -30,7 +30,7 @@ Root also accepts `children`, `unstyled`, and `handleRef`. The handle exposes `o
 | Component | Behavior |
 | --- | --- |
 | `Mention.Input` | Native textarea. Accepts standard event handlers, controlled values, refs, styles, and form attributes. |
-| `Mention.Popover` | Caret-positioned listbox. Accepts div props, `maxHeight` (280 by default), and `container`. `container={null}` renders in place. |
+| `Mention.Popover` | Caret-positioned listbox, hidden after a failed search. Accepts div props, `maxHeight` (280 by default), and `container`. `container={null}` renders in place. |
 | `Mention.List<T>` | Calls its child function for each result. Optional `trigger` restricts the active channel. |
 | `Mention.Item` | Option with a `value`, children, and normal div props. |
 | `Mention.Loading` | Renders while a request is pending. |
@@ -44,14 +44,14 @@ React context cannot infer a List's item type from Root. Supply `Mention.List<Pe
 
 | Member | Purpose |
 | --- | --- |
-| `open`, `query`, `activeTrigger` | Current suggestion session. |
+| `open`, `query`, `activeTrigger` | Popup visibility, query, and visible channel. A failed search keeps its query but sets `open` to false and `activeTrigger` to null. |
 | `items`, `status` | Current results and `idle / loading / success / error` status. Old requests never supply current results. |
 | `highlightedIndex` | Active option index, or -1. |
 | `getInputProps(props?)` | Composes textarea props and registers the built-in adapter through its ref. Pass handlers into this method rather than overwriting its returned handlers. |
 | `getEditorProps()` | ARIA attributes for a host with its own event system. |
 | `getPopoverProps()` | Listbox attributes. |
 | `getItemProps(item, index, props?)` | Option attributes and composed pointer handlers. Supply React keys separately. |
-| `setOpen(boolean)` | Dismiss or rescan the current selection. |
+| `setOpen(boolean)` | Dismiss or rescan the current selection. Opening a failed search starts a new request for that query. |
 | `commit(item)` | Returns false if the item, text, or selection is no longer current. |
 | `editor`, `setEditor(adapter)` | Current host and registration. Clear on cleanup. |
 | `refresh()` | Rescan after an editor transaction or selection change. |

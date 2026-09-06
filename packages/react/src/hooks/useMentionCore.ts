@@ -64,7 +64,7 @@ export function useMentionCore<T = unknown>(props: CoreProps): CoreReturn<T> {
     requestKey: session,
     debounceMs: props.debounceMs,
   });
-  const open = session !== null && channel !== undefined;
+  const open = session !== null && channel !== undefined && status !== "error";
   const highlightedIndex =
     !open || items.length === 0
       ? -1
@@ -122,9 +122,11 @@ export function useMentionCore<T = unknown>(props: CoreProps): CoreReturn<T> {
         return;
       }
       dismissed.current = null;
+      // Explicitly reopening a failed search retries it; ordinary refreshes do not.
+      if (live.current.status === "error") setSession(null);
       refresh();
     },
-    [close, refresh],
+    [close, refresh, live],
   );
 
   const commit = useCallback(
