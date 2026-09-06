@@ -267,6 +267,9 @@ p {
 .docs-actions > a:hover {
   background: var(--bg-elevated);
 }
+.docs-actions > a:active {
+  background: var(--border-subtle);
+}
 .docs-body {
   max-width: 72ch;
   line-height: 1.75;
@@ -369,8 +372,21 @@ p {
 .copy-control > button:disabled {
   cursor: wait;
 }
-.copy-control > button:hover {
+.copy-control > button:hover:not(:disabled) {
   background: var(--bg-elevated);
+}
+.copy-control > button:active:not(:disabled) {
+  background: var(--border-subtle);
+}
+.copy-label {
+  display: grid;
+}
+.copy-label > span {
+  grid-area: 1 / 1;
+  visibility: hidden;
+}
+.copy-label > span[data-visible="true"] {
+  visibility: visible;
 }
 .copy-control svg {
   flex-shrink: 0;
@@ -407,8 +423,11 @@ p {
   right: 0.25rem;
   z-index: 2;
 }
-.docs-code-block .code-copy > button:hover {
+.docs-code-block .code-copy > button:hover:not(:disabled) {
   background: var(--border-subtle);
+}
+.docs-code-block .code-copy > button:active:not(:disabled) {
+  background: color-mix(in srgb, var(--border-subtle) 75%, var(--fg));
 }
 .docs-code-block .copy-failed {
   left: auto;
@@ -648,6 +667,9 @@ div:has(+ #nd-sidebar-mobile) {
 .agent-setup-trigger:hover {
   background: var(--bg-elevated);
 }
+.agent-setup-trigger:active {
+  background: var(--border-subtle);
+}
 .agent-setup {
   display: flex;
   flex-direction: column;
@@ -687,6 +709,9 @@ div:has(+ #nd-sidebar-mobile) {
 }
 .agent-setup-heading button:hover {
   background: var(--bg-elevated);
+}
+.agent-setup-heading button:active {
+  background: var(--border-subtle);
 }
 .agent-setup-body {
   min-height: 0;
@@ -742,8 +767,11 @@ div:has(+ #nd-sidebar-mobile) {
   color: var(--bg);
   font-weight: 550;
 }
-.agent-setup-actions .copy-control > button:hover {
+.agent-setup-actions .copy-control > button:hover:not(:disabled) {
   background: var(--fg-muted);
+}
+.agent-setup-actions .copy-control > button:active:not(:disabled) {
+  background: color-mix(in srgb, var(--fg) 88%, var(--bg));
 }
 .agent-setup-actions > a {
   display: inline-flex;
