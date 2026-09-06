@@ -52,6 +52,7 @@ export function useMentionCore<T = unknown>(props: CoreProps): CoreReturn<T> {
   } | null>(null);
   const dismissed = useRef<EditorSnapshot | null>(null);
   const composing = useRef(false);
+  const canceledPress = useRef<EventTarget | null>(null);
   const mouseMoving = useRef<() => boolean>(() => false);
   const id = useId();
   const listboxId = `mention-listbox-${id}`;
@@ -343,12 +344,27 @@ export function useMentionCore<T = unknown>(props: CoreProps): CoreReturn<T> {
       id: optionId(index),
       role: "option",
       "aria-selected": index === highlightedIndex,
+      onPointerDown(event) {
+        itemProps.onPointerDown?.(event);
+        canceledPress.current = event.defaultPrevented
+          ? event.currentTarget
+          : null;
+      },
       onMouseDown(event) {
         itemProps.onMouseDown?.(event);
-        if (!event.defaultPrevented && event.button === 0) {
+        if (event.defaultPrevented) canceledPress.current = event.currentTarget;
+        // Retain editor focus; a completed click, not the press, selects.
+        if (!event.defaultPrevented && event.button === 0)
           event.preventDefault();
+      },
+      onClick(event) {
+        itemProps.onClick?.(event);
+        // A non-pointer activation has no press to veto.
+        const canceled =
+          event.detail > 0 && canceledPress.current === event.currentTarget;
+        canceledPress.current = null;
+        if (!event.defaultPrevented && !canceled && event.button === 0)
           commit(item);
-        }
       },
       onPointerMove(event) {
         itemProps.onPointerMove?.(event);
