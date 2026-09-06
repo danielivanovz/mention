@@ -5,7 +5,7 @@
 // pattern for this surface. The chrome around it (avatar, timestamp,
 // faux prior comment) sells "this is a real product context".
 
-import { Mention } from "@danielivanovz/mention";
+import { Mention } from "@danielivanov/mention";
 
 interface User {
   id: string;

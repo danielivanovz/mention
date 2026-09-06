@@ -8,7 +8,7 @@ import Link from "next/link";
 export const metadata = {
   title: "Internals · @mention",
   description:
-    "Under-the-hood deep-dives: caret anchoring, the ARIA contract, and the technical bits behind @danielivanovz/mention.",
+    "Under-the-hood deep-dives: caret anchoring, the ARIA contract, and the technical bits behind @danielivanov/mention.",
 };
 
 interface Entry {

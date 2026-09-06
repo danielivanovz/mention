@@ -3,19 +3,23 @@
   "private": true,
   "version": "0.0.0",
   "description": "Monorepo for @danielivanov/mention and its docs site. The library lives in packages/react; the Fumadocs docs site lives in apps/docs.",
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "build": "cd packages/react && bun run build",
     "test": "cd packages/react && bun run test",
-    "test:e2e": "cd packages/react && bun run test:e2e",
-    "type-check": "cd packages/react && bun run type-check",
+    "test:e2e": "bun run build && cd packages/react && bun run test:e2e",
+    "type-check": "bun run build && cd packages/react && bun run type-check && cd ../../apps/docs && bun run types:check",
     "size": "cd packages/react && bun run size",
     "docs:dev": "cd apps/docs && bun run dev",
     "dev:all": "bun run --filter '*' --parallel dev",
     "changeset": "changeset",
     "changeset:status": "changeset status --verbose",
     "version": "changeset version",
-    "release": "bun run build && changeset publish"
+    "release": "bun run build && changeset publish",
+    "docs:build": "bun run build && cd apps/docs && bun run build"
   },
   "license": "MIT",
   "devDependencies": {

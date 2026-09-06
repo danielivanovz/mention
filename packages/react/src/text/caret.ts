@@ -13,8 +13,8 @@
  *
  * **Provenance.** Ported from `component/textarea-caret-position` v3.1.0
  * (MIT — Dan Dascalescu, Jonathan Ong), narrowed to `<textarea>` only
- * (the original also handled `<input>`). The contenteditable adapter
- * uses the native Range API instead.
+ * (the original also handled `<input>`). Rich editors provide their own
+ * selection measurements through the editor adapter.
  *
  * **Known limits.**
  *   - Layout-engine dependent: requires a real browser. happy-dom returns
@@ -166,7 +166,10 @@ export function getCaretCoordinates(
     return {
       top: span.offsetTop + parseInt(computed.borderTopWidth, 10),
       left: spanLeftLocal + parseInt(computed.borderLeftWidth, 10),
-      height: parseInt(computed.lineHeight, 10),
+      height:
+        parseFloat(computed.lineHeight) ||
+        span.getClientRects()[0]?.height ||
+        parseFloat(computed.fontSize),
     };
   } finally {
     // Always clean up the mirror div, even if the layout reads throw.

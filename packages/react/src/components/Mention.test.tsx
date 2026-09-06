@@ -2,9 +2,8 @@
 
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
-import { _testing as mouseMovingTesting } from "../hooks/mouse-moving-guard.ts";
 import { Mention } from "./index.ts";
 
 interface User {
@@ -463,10 +462,6 @@ describe("Mention — combobox-as-substring contract", () => {
   // flipped the flag must not silently satisfy the next test's
   // "stationary cursor" precondition.
   describe("pointer hover moves the active item", () => {
-    afterEach(() => {
-      mouseMovingTesting.reset();
-    });
-
     // User need: a mouse user opens the popover, glances at the list,
     //   moves the cursor to a row, presses Enter → that row commits.
     //   The visual highlight must follow the cursor so the user can
@@ -493,7 +488,11 @@ describe("Mention — combobox-as-substring contract", () => {
       // happy-dom's user.hover() emits pointermove with zero deltas,
       // which our guard correctly ignores. Setting the flag directly
       // models a prior real movement.
-      mouseMovingTesting.setMoving(true);
+      fireEvent.pointerMove(document, {
+        screenX: 20,
+        screenY: 30,
+        pointerType: "mouse",
+      });
       await user.hover(options[2] as HTMLElement);
 
       expect(options[2]).toHaveAttribute("aria-selected", "true");
@@ -543,7 +542,11 @@ describe("Mention — combobox-as-substring contract", () => {
       await user.keyboard("@");
 
       const options = screen.getAllByRole("option");
-      mouseMovingTesting.setMoving(true);
+      fireEvent.pointerMove(document, {
+        screenX: 20,
+        screenY: 30,
+        pointerType: "mouse",
+      });
       await user.hover(options[1] as HTMLElement);
       expect(options[1]).toHaveAttribute("aria-selected", "true");
 
@@ -618,10 +621,6 @@ function MultiDemo({
 }
 
 describe("Mention — multi-trigger Root overload", () => {
-  afterEach(() => {
-    mouseMovingTesting.reset();
-  });
-
   // User need: one editor with both `@` for users and `#` for channels.
   //   The locked `MentionRootMultiProps` shape exposes a `triggers`
   //   record; whichever trigger fires drives the active channel's

@@ -104,7 +104,7 @@ describe("findActiveMention", () => {
   //   verify the `@ali` after `田中　` triggers via the whitespace
   //   path, not the soft-boundary path.
   it("treats fullwidth (ideographic) space as whitespace", () => {
-    expect(findActiveMention("田中　@ali", 8)).toEqual({
+    expect(findActiveMention("田中　@ali", 7)).toEqual({
       trigger: "@",
       query: "ali",
     });
@@ -238,4 +238,12 @@ describe("findActiveMention", () => {
       query: "",
     });
   });
+});
+
+it("recognizes a supplementary Han character before a trigger", () => {
+  expect(findActiveMention("𠀀@a", 4)).toEqual({ trigger: "@", query: "a" });
+});
+it("rejects caret offsets outside the supplied text", () => {
+  for (const caret of [-1, 0.5, 3, Infinity, NaN])
+    expect(findActiveMention("@a", caret)).toBeNull();
 });

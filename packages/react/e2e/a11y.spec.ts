@@ -39,33 +39,8 @@ test.describe("automated a11y (axe-core)", () => {
 
     const results = await new AxeBuilder({ page })
       .withTags(["cat.aria", "best-practice"])
-      // KNOWN EXCEPTIONS — both are best-practice rules (not WCAG) that
-      // conflict with patterns shipped by every production React UI lib.
-      //
-      // 1. `aria-allowed-role` — see Spike 001 finding "HTML-ARIA
-      //    conformance" and ADR-0001. The HTML-ARIA conformance table
-      //    forbids `role="combobox"` on `<textarea>`, but ARIA 1.2
-      //    permits it (combobox is role-applicable to any editable
-      //    surface). Ariakit, GitHub, Slack, and Linear ship this. The
-      //    combobox-as-substring contract requires DOM focus to stay on
-      //    the textarea — an external focus-stealing combobox would
-      //    break IME and soft-keyboards. Spike's manual AT matrix
-      //    (`AT-TEST-PLAN.md`, walked 2026-04-29) confirms NVDA / JAWS
-      //    / VoiceOver / TalkBack handle the pattern correctly.
-      //
-      // 2. `region` — wants every node inside a landmark, but the
-      //    listbox is portaled to `document.body` (I5) so it can escape
-      //    `overflow: hidden` ancestors. Every popover library that
-      //    portals (Radix, Ariakit, MUI, Headless UI) trips this rule.
-      //    AT navigation to options goes through `aria-controls` +
-      //    `aria-activedescendant`, not landmark jumps — users reach
-      //    the options via arrow-keys-on-textarea, not via region nav.
-      //    Consumers who want strict landmark coverage can pass
-      //    `<Mention.Popover container={mainEl}>` to keep the listbox
-      //    inside their landmark.
-      //
-      // The WCAG 2.1 AA sweep (the other tests in this file) passes
-      // unconditionally — these exceptions affect only best-practice.
+      // Known findings are tracked separately below. The textarea role
+      // conflicts with HTML-ARIA; the body portal sits outside landmarks.
       .disableRules(["aria-allowed-role", "region"])
       .analyze();
 

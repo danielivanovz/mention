@@ -1,79 +1,32 @@
 ---
-title: Rich-text editor integration
-description: How @danielivanovz/mention integrates with Lexical, TipTap, Slate, and other rich-text frameworks via the EditorAdapter contract.
+title: Rich-text editors
+description: Keep documents, chips, and undo inside the editor.
 ---
 
-`@danielivanovz/mention` ships two host adapters in the box: **textarea** (via `<Mention.Input>`) and **plain-text contenteditable** (via `<Mention.Editable>`). Anything beyond that — Lexical, TipTap, Slate, ProseMirror, CodeMirror, your own custom editor — integrates via the same five-method `EditorAdapter` contract.
+Mention owns suggestions. Your editor owns the document and every edit to it. This includes mention nodes, selection, serialization, clipboard handling, and history.
 
-This page frames where the library's responsibility ends and the host editor's begins.
+The ProseMirror example below uses real mention nodes and editor transactions. Its browser tests cover inserting mentions across paragraphs, preserving formatting during paste, undo, redo, and node deletion.
 
-## The boundary
+<ProseMirrorDemo />
 
-The library owns:
+Try `@Alice`, press Enter to insert, then undo. Add another paragraph and mention Bob. The first mention remains a document node.
 
-- **The combobox-as-substring contract** — `role="combobox"`, `aria-controls`, `aria-activedescendant`, `aria-expanded`, `aria-haspopup`, `aria-autocomplete`. DOM focus stays in the host editor. No second tab stop. No focus shift on highlight.
-- **The state machine** — open/close/highlight/commit reducer; trigger detection; IME composition guard; pointer-driven highlight.
-- **Caret-anchored positioning** — Floating UI virtual element bound to whatever `getCaretRect()` reports.
-- **Chip selection** — two-step backspace state machine; aria-live announcement.
+## Connect an editor
 
-The framework editor owns:
+Inside `Mention.Root`, call `useMentionContext<Person>()`. Register an `EditorAdapter<Person>` with `setEditor(adapter)`, and clear it with `setEditor(null)` when the editor is destroyed.
 
-- **Editor a11y** — text-region role, line/paragraph semantics, find-in-page, undo stack integration, paste sanitization. The mention library does not extend the framework's a11y surface.
-- **Selection model** — what counts as a "caret offset" inside a node tree (Lexical's `LexicalNode`-keyed selection, ProseMirror's 1-indexed text offsets, Slate's `Path + Offset`).
-- **Document structure** — block-level layout, embedded media, code blocks. Mentions are inline insertions; the host editor's normalization rules govern what's valid where.
+The adapter has three operations:
 
-The `EditorAdapter` interface is the contract that maps from the host's selection model to the library's flat character-offset model. Three methods are required on every adapter (`getValue`, `getCaretOffset`, `applyInsert`); two more (`applyChipInsert`, `getChipBeforeCaret`) are needed for `shape: "node"` channels.
+1. `read()` returns a text region and a collapsed caret, or null when editing is unavailable. A paragraph is a useful region; scan boundaries must not join adjacent blocks. Include a `key` when two regions could have identical text.
+2. `getCaretRect()` returns viewport coordinates from the editor's selection API.
+3. `replace(edit, item, meta)` applies one range replacement through an editor transaction. Insert a text node or a mention node according to your schema.
 
-## Writing a custom adapter
+After every document or selection transaction, call `refresh()`. Forward keyboard events to `handleKeyDown(event)` before your editor's other key bindings. Apply `getEditorProps()` to its editable host as the suggestion state changes. During composition, `read()` should return null and the editor must preserve its own IME handling.
 
-```ts
-import type { EditorAdapter, MentionInsertResult } from "@danielivanovz/mention";
+## Position mapping
 
-export function createMyEditorAdapter(editor: MyEditor): EditorAdapter {
-  return {
-    element: editor.rootElement,
-    getValue: () => editor.getPlainText(),
-    getCaretOffset: () => editor.getSelection().anchorOffset,
-    getCaretRect: () => editor.getCaretBoundingRect(),
-    applyInsert: (result: MentionInsertResult) => {
-      editor.replaceAll(result.value);
-      editor.setCaret(result.caret);
-    },
-    focus: () => editor.focus(),
-  };
-}
-```
+Offsets in `EditorSnapshot` and `MentionEdit` use UTF-16 and must agree. The ProseMirror example scans the current paragraph, represents each inline atom with one placeholder character, and translates range offsets back into document positions. It never flattens the document or replaces its DOM.
 
-Then wire it up:
+The full [executable source](https://github.com/danielivanovz/mention/blob/main/packages/react/examples/ProseMirror.tsx) also demonstrates schema serialization and history grouping.
 
-```tsx
-const adapterRef = useRef<EditorAdapter | null>(null);
-useEffect(() => {
-  adapterRef.current = createMyEditorAdapter(myEditor);
-}, [myEditor]);
-```
-
-For `shape: "node"` channels, also implement `applyChipInsert` (insert the supplied placeholder element at the trigger window) and `getChipBeforeCaret` (return the chip element directly preceding the caret, or `null`).
-
-## Per-framework recipes
-
-- **[Lexical](/docs/recipes/lexical)** — subscribe to `editor.registerUpdateListener`; insert via `editor.update(() => …)`; chips as `DecoratorNode`.
-- **[TipTap](/docs/recipes/tiptap)** — ProseMirror coordinate mapping; insert via `editor.commands.insertContentAt`; chips as ProseMirror node spec with `atom: true`.
-- **[Slate](/docs/recipes/slate)** — `Editor.string(editor, [])` for value; `Range.start(selection)` for anchor; `Transforms.insertText` / `Transforms.insertNodes` for commit.
-
-## Known limitations
-
-| Framework | Limitation |
-|---|---|
-| Lexical | Chip atomicity requires `DecoratorNode` (not `TextNode`). The substring path works with `TextNode` directly. |
-| TipTap | ProseMirror positions are 1-indexed text offsets; the adapter must convert to/from the library's 0-indexed character model. |
-| Slate | `Transforms` runs inside `Editor.withoutNormalizing` for commit atomicity — otherwise normalization can split nodes mid-operation and invalidate the caret offset. |
-| All three | Undo/redo is the framework's responsibility. The library doesn't push commits onto a host undo stack — consumers wire that themselves if needed. |
-
-## What's NOT in the library
-
-The library deliberately ships only the textarea + plain-text contenteditable adapters. Framework adapters live as **recipes** (copy-paste examples) rather than first-class exports because:
-
-1. Bundling framework deps inside `@danielivanovz/mention` would breach the wedge (the library's value proposition is "modern bundle size, no editor framework required").
-2. Framework adapter shape evolves with the framework's own API — keeping them as recipes means consumers can pin the version that matches their host.
-3. Each framework has community-maintained mention plugins of its own (Lexical's `LexicalTypeaheadMenuPlugin`, TipTap's mention extension). The wedge for `@danielivanovz/mention` is the headless cross-framework primitive — recipes show how to opt into it when the framework's built-in plugin doesn't fit.
+Other editors can use this interface, but their adapters need independent validation against their selection and transaction models. The ProseMirror example does not establish compatibility with Lexical, Tiptap, or Slate.

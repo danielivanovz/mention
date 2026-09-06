@@ -1,25 +1,15 @@
 import Link from "next/link";
-import type { CSSProperties } from "react";
 import { AnatomyDiagram } from "@/components/anatomy-diagram";
 import { CopyButton } from "@/components/copy-button";
-import { HeroShaderClient } from "@/components/hero-shader-client";
 import { MentionDemo } from "@/components/mention-demo";
-import { Reveal } from "@/components/reveal";
 import { UseCasesGrid } from "@/components/use-cases-grid";
-
-// Tiny helper to set the cascade index used by `.hero-stagger > *`'s
-// `animation-delay: calc(var(--i, 0) * 60ms)` rule. Inline custom
-// properties keep the page a server component (no client wrapper just
-// to set a number).
-const order = (i: number): CSSProperties =>
-  ({ ["--i" as string]: i }) as CSSProperties;
 
 export default function HomePage() {
   return (
     <div className="text-fg">
       {/* ─── Hero ─────────────────────────────────────────────── */}
       <section className="relative isolate overflow-hidden">
-        {/* Static fallback — visible if the shader fails or JS is off. */}
+        {/* Static background. */}
         <div
           aria-hidden
           className="absolute inset-0 -z-10"
@@ -29,39 +19,34 @@ export default function HomePage() {
           }}
         />
         <div className="absolute inset-0 -z-10 opacity-60">
-          <HeroShaderClient />
+          <div
+            className="absolute inset-0 bg-gradient-to-br from-accent/10 via-transparent to-accent/5"
+            aria-hidden
+          />
         </div>
 
-        <div className="hero-stagger mx-auto max-w-6xl px-6 pt-24 pb-32 sm:pt-32 sm:pb-40">
-          <p className="font-mono text-meta text-fg-muted" style={order(0)}>
-            v0.1 · MIT
-          </p>
+        <div className="mx-auto max-w-6xl px-6 pt-24 pb-32 sm:pt-32 sm:pb-40">
+          <p className="font-mono text-meta text-fg-muted">v0.1 · MIT</p>
           <h1
             className="mt-4 max-w-3xl font-display font-semibold tracking-tight"
             style={{
               fontSize: "var(--type-display)",
               lineHeight: 1.02,
-              ...order(1),
             }}
           >
-            A textarea-native mention &amp; trigger primitive for React.
+            Mention suggestions for React.
           </h1>
-          <p
-            className="mt-6 max-w-prose text-lg text-fg-muted"
-            style={order(2)}
-          >
-            Headless, accessible, ~14 kB. <code className="font-mono text-sm">@</code>{" "}
-            mentions, <code className="font-mono text-sm">#</code> channels,{" "}
+          <p className="mt-6 max-w-prose text-lg text-fg-muted">
+            Headless and customizable.{" "}
+            <code className="font-mono text-sm">@</code> mentions,{" "}
+            <code className="font-mono text-sm">#</code> channels,{" "}
             <code className="font-mono text-sm">/</code> commands —{" "}
-            <em>any trigger you want</em>, in one editor, with the WAI-ARIA
-            combobox contract done right and no rich-text framework.
+            <em>your triggers</em>, with a native textarea or an editor you
+            already use.
           </p>
 
-          <div
-            className="mt-10 flex flex-wrap items-center gap-4"
-            style={order(3)}
-          >
-            <CopyButton value="bun add @danielivanovz/mention" />
+          <div className="mt-10 flex flex-wrap items-center gap-4">
+            <CopyButton value="bun add @danielivanov/mention" />
             <Link
               href="/docs"
               className="text-sm text-fg-muted underline-offset-4 transition-colors hover:text-fg hover:underline"
@@ -70,7 +55,7 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="mt-16 max-w-2xl" style={order(4)}>
+          <div className="mt-16 max-w-2xl">
             <MentionDemo />
             <p className="mt-3 font-mono text-meta text-fg-muted">
               Try{" "}
@@ -117,55 +102,55 @@ export default function HomePage() {
           <p className="font-mono text-meta text-fg-muted">Why this lib</p>
 
           <div className="mt-16 space-y-14 max-w-3xl">
-            <Reveal>
+            <div>
               <Claim
                 n="01"
-                title="Accessible by construction."
-                body="Combobox-as-substring done by the WAI-ARIA APG: textarea keeps focus, aria-activedescendant moves between virtual options, screen readers narrate changes without focus theft."
+                title="Keyboard navigation built in."
+                body="The editor keeps focus as arrow keys move through suggestions. Read the accessibility guide for the current role behavior, known conformance issue, and manual testing requirements."
               />
-            </Reveal>
-            <Reveal delay={40}>
+            </div>
+            <div>
               <Claim
                 n="02"
                 title="Multi-trigger by design."
                 body="One editor, any combination of triggers. Pass a triggers map keyed by the characters you choose — @ mentions, # channels, / commands, : emoji — each with its own item shape, render, and insert format. Channel switching, per-channel typing, and discriminated payloads all handled by the library; you write three render-props instead of three components."
               />
-            </Reveal>
-            <Reveal delay={80}>
+            </div>
+            <div>
               <Claim
                 n="03"
-                title="Textarea-native."
-                body="Plain <textarea>. No contenteditable, no custom selection model, no rich-text framework. Forms submit it, password managers fill it, mobile keyboards behave."
+                title="Your editor owns the document."
+                body="Start with a native textarea and ordinary form props. Connect a rich editor through a range transaction adapter when you need mention nodes, formatting, and document history."
               />
-            </Reveal>
-            <Reveal delay={120}>
+            </div>
+            <div>
               <Claim
                 n="04"
                 title="Caret-anchored popover."
-                body="Mirror-div math measures the active line + column, then anchors via Floating UI's virtual element. The popover follows the caret pixel-perfectly across wraps and resizes."
+                body="Mirror-div math measures the active line + column, then anchors via Floating UI's virtual element. The popover follows the caret as text wraps and the editor resizes."
               />
-            </Reveal>
-            <Reveal delay={160}>
+            </div>
+            <div>
               <Claim
                 n="05"
-                title="i18n + IME safe."
-                body="CJK / Thai / Khmer / Lao / Myanmar word boundaries handled at the dispatcher; bidi-aware caret math for RTL; composition guards so Japanese, Pinyin, and Gboard never race past the trigger. The plumbing most mention libraries skip."
+                title="Composition-aware input."
+                body="Detection supports soft word boundaries for several Unicode scripts. Composition guards leave candidate confirmation to the input method. Test with the actual languages and keyboards your application supports."
               />
-            </Reveal>
-            <Reveal delay={200}>
+            </div>
+            <div>
               <Claim
                 n="06"
                 title="shadcn-friendly."
                 body="Theme tokens resolve through --popover, --accent, --border. Drop it in any shadcn project and it inherits. Or use the unstyled prop and drive every selector yourself."
               />
-            </Reveal>
-            <Reveal delay={240}>
+            </div>
+            <div>
               <Claim
                 n="07"
                 title="Small."
-                body="~14 kB minified+gzipped, ceiling-enforced in CI. No editor framework, no DOM library, no Tailwind dependency, no portal hacks. The runtime is the reducer + a popover."
+                body="A 14 kB gzip budget, including Floating UI. Editor frameworks belong to application integrations and are excluded from the library runtime."
               />
-            </Reveal>
+            </div>
           </div>
         </div>
       </section>
@@ -206,10 +191,10 @@ export default function HomePage() {
                 Add it.
               </h2>
               <div className="mt-6">
-                <CopyButton value="bun add @danielivanovz/mention" />
+                <CopyButton value="bun add @danielivanov/mention" />
               </div>
               <p className="mt-4 font-mono text-meta text-fg-muted">
-                Peers: react ≥ 18 · react-dom ≥ 18.
+                Peers: react 19 · react-dom 19.
               </p>
             </div>
             <Link
@@ -223,10 +208,10 @@ export default function HomePage() {
 
         <footer className="border-t border-border-subtle/60">
           <div className="mx-auto flex max-w-6xl flex-col gap-3 px-6 py-8 text-meta text-fg-muted sm:flex-row sm:items-center sm:justify-between">
-            <p className="font-mono">@danielivanovz/mention · v0.1 · MIT</p>
+            <p className="font-mono">@danielivanov/mention · v0.1 · MIT</p>
             <nav className="flex flex-wrap items-center gap-x-5 gap-y-2">
               <a
-                href="https://www.npmjs.com/package/@danielivanovz/mention"
+                href="https://www.npmjs.com/package/@danielivanov/mention"
                 className="transition-colors hover:text-fg"
                 target="_blank"
                 rel="noopener noreferrer"

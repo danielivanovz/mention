@@ -10,7 +10,7 @@ Most consumers can stay inside the compound API and pass children to `<Mention.I
 `<Mention.Item>` accepts arbitrary children. Avatar + name + handle is the canonical layout:
 
 ```tsx
-<Mention.List>
+<Mention.List<User>>
   {(u) => (
     <Mention.Item value={u}>
       <img src={u.avatar} alt="" className="size-6 rounded-full" />
@@ -28,7 +28,7 @@ The library applies `role="option"`, `id`, hover handlers, and `aria-selected` o
 The render-prop is just a function — interleave any non-`Mention.Item` JSX freely:
 
 ```tsx
-<Mention.List>
+<Mention.List<User>>
   {(u, i) => (
     <>
       {i === 0 || u.team !== items[i - 1].team ? (
@@ -49,7 +49,7 @@ The render-prop is just a function — interleave any non-`Mention.Item` JSX fre
 When `<Mention.Popover>`'s default container doesn't fit (you're building a sticky bottom bar, or wrapping in your own design-system Popover), pull the props directly:
 
 ```tsx
-import { useMention } from "@danielivanovz/mention";
+import { useMention } from "@danielivanov/mention";
 
 export function CustomMention() {
   const m = useMention<User>({
@@ -63,16 +63,16 @@ export function CustomMention() {
     <div className="relative">
       <textarea {...m.getInputProps()} aria-label="Message" />
       {m.open ? (
-        <ul {...m.getPopoverProps()} className="absolute mt-1 …">
+        <div {...m.getPopoverProps()} className="absolute mt-1 …">
           {m.items.map((u, i) => (
-            <li
+            <div
               key={u.id} // ← required; getItemProps doesn't include `key`
               {...m.getItemProps(u, i)}
             >
               {u.name}
-            </li>
+            </div>
           ))}
-        </ul>
+        </div>
       ) : null}
     </div>
   );
@@ -85,13 +85,13 @@ export function CustomMention() {
 
 ```tsx
 {m.items.map((u, i) => (
-  <li key={m.items[i] ? getKey(m.items[i]) : i} {...m.getItemProps(u, i)}>
+  <div key={m.items[i] ? getKey(m.items[i]) : i} {...m.getItemProps(u, i)}>
     …
-  </li>
+  </div>
 ))}
 ```
 
-The compound API (`<Mention.List>`) handles this internally — only escape-hatch consumers need to remember it.
+The compound API (`<Mention.List<User>>`) handles this internally — only escape-hatch consumers need to remember it.
 
 ## Imperative control
 
@@ -106,7 +106,7 @@ const handle = useRef<MentionImperativeHandle<User>>(null);
 
 // later:
 handle.current?.commit(suggestedUser);
-handle.current?.textarea?.focus();
+handle.current?.host?.focus();
 ```
 
-Useful for tests, keyboard shortcuts ("⌘K opens the suggestion menu"), and integrating with command palettes.
+Opening rescans the current caret and requires an active trigger. Commit accepts only an item from the current results.

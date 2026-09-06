@@ -25,7 +25,7 @@ const config = {
   // Trade-off chosen on 2026-04-29: keep the workspace contract honest
   // (docs imports the same bundle npm consumers do) at the cost of a
   // less-instant inner loop.
-  transpilePackages: ["@danielivanovz/mention"],
+  transpilePackages: ["@danielivanov/mention"],
 };
 
 export default withMDX(config);

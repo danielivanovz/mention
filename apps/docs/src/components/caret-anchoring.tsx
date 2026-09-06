@@ -1,7 +1,7 @@
 "use client";
 
 // Caret-anchoring visualizer.
-// Pane ① runs the real <Mention> component from @danielivanovz/mention. Pane ② is
+// Pane ① runs the real <Mention> component from @danielivanov/mention. Pane ② is
 // a teaching mirror — same value, same selectionStart, same dimensions —
 // that exposes the caret-position trick the lib uses internally to anchor
 // the popover. The mirror is normally invisible; exposing it is the whole
@@ -10,7 +10,7 @@
 // onInput / onSelect / onClick are not claimed by getInputProps(), so we
 // can subscribe to them without breaking the lib's ARIA contract.
 
-import { Mention } from "@danielivanovz/mention";
+import { Mention } from "@danielivanov/mention";
 import { useCallback, useId, useLayoutEffect, useRef, useState } from "react";
 
 interface User {
@@ -104,7 +104,7 @@ export function CaretAnchoring() {
             className="block font-mono text-meta text-fg-muted"
           >
             <span className="text-fg">①</span> {"<Mention> from "}
-            <code className="text-fg">@danielivanovz/mention</code>
+            <code className="text-fg">@danielivanov/mention</code>
           </label>
           <Mention.Root<User>
             items={USERS}

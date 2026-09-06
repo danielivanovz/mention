@@ -1,53 +1,29 @@
-import type { MentionInsertResult } from "../text/replace.ts";
+import type { MentionSelectMeta } from "../types.ts";
 
-/**
- * Editor-agnostic seam for the host element that drives `useMentionCore`.
- *
- * Substring-shape adapters (textarea + plain-text contenteditable) implement
- * the core five methods. Chip-capable adapters (contenteditable) additionally
- * implement `applyChipInsert` + `getChipBeforeCaret`. The core branches on
- * `channel.shape` and asserts adapter capability.
- */
-export interface EditorAdapter {
-  /** Live DOM node — used by the Floating UI anchor + focus management. */
-  readonly element: HTMLElement;
-  /** Plain-text value at commit time. */
-  getValue(): string;
-  /** Caret offset in character units. Collapsed selection assumed. */
-  getCaretOffset(): number;
-  /** Caret bounding rect in viewport coordinates, or null on failure. */
-  getCaretRect(): DOMRect | null;
-  /** Apply a `(value, caret)` transition computed by `applyMentionInsert`. */
-  applyInsert(result: MentionInsertResult): void;
-  /** Restore focus after a programmatic commit. */
-  focus(): void;
-  /**
-   * Chip insertion. Splices the `[triggerOffset, caret)` substring
-   * out of the host and replaces it with the supplied placeholder element
-   * (`contenteditable="false"`, `data-mention-id`, `data-mention-text`).
-   * Restores caret immediately after the chip + a trailing space.
-   * Optional — only chip-capable hosts implement this.
-   */
-  applyChipInsert?(input: ChipInsertInput): void;
-  /**
-   * Two-step backspace lookup. Returns the chip element directly
-   * preceding the current caret position, or null when the caret is not
-   * adjacent to a chip. Optional.
-   */
-  getChipBeforeCaret?(): HTMLElement | null;
+/** Text and a collapsed selection in one editable region. Offsets use UTF-16. */
+export interface EditorSnapshot {
+  readonly text: string;
+  readonly caret: number;
+  /** Distinguishes regions with identical text, such as two paragraphs. */
+  readonly key?: unknown;
 }
-
-/**
- * Input to `applyChipInsert`. Mirrors `MentionInsertInput`'s splice
- * geometry but contributes a DOM node instead of a substring — the
- * placeholder is fully constructed by the core (data attrs set, label
- * text inside) before this method is called.
- */
-export interface ChipInsertInput {
-  /** Caret offset where the trigger character lives. */
-  readonly triggerOffset: number;
-  /** Caret offset at commit time (`triggerOffset + 1 + query.length`). */
-  readonly selectionStart: number;
-  /** The chip placeholder to insert in place of `[triggerOffset, selectionStart)`. */
-  readonly chip: HTMLElement;
+export interface MentionEdit {
+  readonly from: number;
+  readonly to: number;
+  /** Formatted insertion, including any trailing separator. */
+  readonly text: string;
+}
+export interface EditorAdapter<T = unknown> {
+  readonly element: HTMLElement;
+  /** null for selections, composition, read-only content, or unsupported regions. */
+  read(): EditorSnapshot | null;
+  getCaretRect(): DOMRect | null;
+  /**
+   * Replace this range with a host editing transaction. Rich editors may create
+   * a mention node from item instead of inserting edit.text. The host owns
+   * serialization, rendering, clipboard behavior, and undo/redo.
+   * Return false if the transaction cannot be applied.
+   */
+  // biome-ignore lint/suspicious/noConfusingVoidType: an editor command may return void or explicitly reject with false.
+  replace(edit: MentionEdit, item: T, meta: MentionSelectMeta): void | boolean;
 }

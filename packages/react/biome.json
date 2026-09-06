@@ -13,7 +13,6 @@
       "!dist",
       "!playwright-report",
       "!test-results",
-      "!.stryker-tmp",
       "!reports"
     ]
   },

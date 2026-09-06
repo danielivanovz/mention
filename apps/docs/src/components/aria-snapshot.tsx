@@ -9,7 +9,7 @@
 // post-render DOM: aria-activedescendant is set by the lib's reducer
 // during the render that follows each input event.
 
-import { Mention } from "@danielivanovz/mention";
+import { Mention } from "@danielivanov/mention";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 interface User {
@@ -111,7 +111,7 @@ export function AriaSnapshot() {
             className="block font-mono text-meta text-fg-muted"
           >
             <span className="text-fg">①</span> {"<Mention> from "}
-            <code className="text-fg">@danielivanovz/mention</code>
+            <code className="text-fg">@danielivanov/mention</code>
           </label>
           <Mention.Root<User>
             items={USERS}

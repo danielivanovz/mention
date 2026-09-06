@@ -1,32 +1,4 @@
-// Browser-mode tests for `getCaretCoordinates`. The happy-dom suite in
-// `caret.test.ts` covers the *structural* contract (cleanup, error
-// shape) but cannot validate pixel correctness because happy-dom skips
-// layout. These tests run in real chromium under `@vitest/browser` so
-// `offsetTop`/`offsetLeft` and `getComputedStyle` return real numbers.
-//
-// **Why this file exists:** I9 mutation testing capped caret at 26.67%
-// because pixel-math mutants (borderTopWidth + → -, offsetTop swapped
-// with offsetLeft, parseInt of the wrong border edge) are unobservable
-// under happy-dom — every layout read is 0, so `0 + 0` and `0 - 0`
-// produce identical output. Real layout makes those mutants visible.
-//
-// **Test design.** The pixel arithmetic in `caret.ts` only adds
-// `border{Top,Left}Width` to `span.offset{Top,Left}`. To kill mutations
-// of those exact additions, we need assertions that depend on the
-// border value with no slack on the sign — i.e., we anchor on absolute
-// pixel ranges where a `+ → -` flip moves the result by `2 *
-// borderWidth` and out of the asserted range. Setting border-top: 4px
-// with offset 0 means correct = `~0 + 4 = 4`, mutant = `0 - 4 = -4`.
-// We then assert `top ∈ [3, 5]` so the mutant fails.
-//
-// Equivalent-mutant ceiling: chromium-only testing can't kill mutations
-// inside the Firefox-detection branch (`isFirefox()` returns false; the
-// branch's body is dead code in this run) or mutations to the SSR
-// guard (`typeof document === "undefined"` is always false in a
-// browser). Those are documented in the run summary, not patched
-// around — running each mutant under both browsers and SSR would
-// triple CI cost for a couple of percentage points.
-
+// Caret measurements require real browser layout.
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { getCaretCoordinates } from "./caret.ts";
@@ -372,4 +344,12 @@ describe("getCaretCoordinates — browser pixel correctness", () => {
       window.getComputedStyle = original;
     }
   });
+});
+
+it("returns a finite caret height for the browser default line-height", () => {
+  const textarea = document.createElement("textarea");
+  textarea.style.lineHeight = "normal";
+  textarea.value = "@Alice";
+  document.body.appendChild(textarea);
+  expect(getCaretCoordinates(textarea, 2).height).toBeGreaterThan(0);
 });

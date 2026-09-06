@@ -8,7 +8,7 @@ import { CaretAnchoring } from "@/components/caret-anchoring";
 export const metadata = {
   title: "Internals · Caret anchoring · @mention",
   description:
-    "How @danielivanovz/mention anchors its popover at the textarea caret: the hidden mirror div, exposed.",
+    "How @danielivanov/mention anchors its popover at the textarea caret: the hidden mirror div, exposed.",
 };
 
 export default function CaretAnchoringPage() {
@@ -76,7 +76,7 @@ export default function CaretAnchoringPage() {
               mirror must replicate. The lib ports the math to TypeScript and
               narrows it to <code className="font-mono">{"<textarea>"}</code>{" "}
               only; <code className="font-mono">contenteditable</code> support
-              lands in v0.2 via the Range API instead.
+              uses the host editor’s selection measurement API.
             </p>
           </div>
         </div>

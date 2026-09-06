@@ -1,4 +1,4 @@
-import "../../src/styles.css";
+import "@danielivanov/mention/styles.css";
 
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";

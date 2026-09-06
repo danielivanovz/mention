@@ -8,7 +8,7 @@ description: Fetch suggestions over the network with debounced cancellation, loa
 ## Minimal fetcher
 
 ```tsx
-import { Mention } from "@danielivanovz/mention";
+import { Mention } from "@danielivanov/mention";
 
 interface User {
   id: number;
@@ -38,7 +38,7 @@ export function MessageInput() {
     >
       <Mention.Input aria-label="Message" />
       <Mention.Popover>
-        <Mention.List>
+        <Mention.List<User>>
           {(u) => (
             <Mention.Item value={u}>
               <strong>{u.name}</strong>
@@ -78,7 +78,7 @@ async function searchUsers(query: string, signal: AbortSignal) {
 }
 ```
 
-When the query advances, the library calls `controller.abort()` on the previous signal, which propagates to every `fetch` and rejects the wrapping Promise with an `AbortError`. The library swallows `AbortError` automatically; only genuine errors trip the `error` status.
+When the query advances, the library calls `controller.abort()` on the previous signal, which propagates to every `fetch` and rejects the wrapping Promise with an `AbortError`. Results from aborted requests are ignored; a rejection of the active request produces the error status.
 
 ## Error and loading states
 

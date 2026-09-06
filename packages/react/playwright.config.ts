@@ -1,8 +1,6 @@
-import { defineConfig, devices } from "@playwright/test";
+import { defineConfig } from "@playwright/test";
 
-// PR CI runs chromium only — three-browser sweeps triple wall time and
-// rarely catch lib-level regressions that chromium misses. The full
-// matrix runs locally and in nightly CI when CROSS_BROWSER=1.
+// Set CROSS_BROWSER=1 for the full engine matrix.
 const isCrossBrowser = process.env.CROSS_BROWSER === "1";
 
 export default defineConfig({
@@ -18,11 +16,11 @@ export default defineConfig({
   },
   projects: isCrossBrowser
     ? [
-        { name: "chromium", use: { ...devices["Desktop Chrome"] } },
-        { name: "firefox", use: { ...devices["Desktop Firefox"] } },
-        { name: "webkit", use: { ...devices["Desktop Safari"] } },
+        { name: "chromium", use: { browserName: "chromium" } },
+        { name: "firefox", use: { browserName: "firefox" } },
+        { name: "webkit", use: { browserName: "webkit" } },
       ]
-    : [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+    : [{ name: "chromium", use: { browserName: "chromium" } }],
   webServer: {
     command: "bun run e2e:dev",
     url: "http://localhost:5175",

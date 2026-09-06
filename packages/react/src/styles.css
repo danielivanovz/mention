@@ -96,38 +96,6 @@
    needed; the previous CSS-only preview produced a double-highlight
    when keyboard-active and pointer-hover diverged (Spike 004). */
 
-/* ─── Chip (C2/C3) ─────────────────────────────────────────────────── */
-
-[data-mention-chip] {
-  display: inline-block;
-  padding: 1px 6px;
-  border-radius: 4px;
-  background: var(--mention-chip-bg, var(--accent, #f1f5f9));
-  color: var(--mention-chip-fg, var(--accent-foreground, #0f172a));
-  user-select: none;
-}
-
-/* C3 — selected (first Backspace at chip's right boundary) gets a
-   visible ring, also surviving forced-colors via outline. The
-   aria-live announcement in <Mention.Chips> is the AT-side cue. */
-[data-mention-chip][data-mention-selected] {
-  outline: 2px solid var(--mention-chip-ring, var(--ring, #2563eb));
-  outline-offset: 1px;
-}
-
-/* Visually-hidden aria-live region rendered by <Mention.Chips>. */
-[data-mention-live] {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
 /* ─── Empty / Loading slots ────────────────────────────────────────── */
 
 [data-mention-empty],
@@ -183,8 +151,7 @@
     color: CanvasText;
   }
 
-  [data-mention-item][aria-selected="true"],
-  [data-mention-item]:hover {
+  [data-mention-item][aria-selected="true"] {
     background: Highlight;
     color: HighlightText;
     /* Outline gives extra discrimination when High Contrast remaps both
@@ -196,17 +163,5 @@
   [data-mention-empty],
   [data-mention-loading] {
     color: GrayText;
-  }
-}
-
-/* ─── Reduced motion ───────────────────────────────────────────────── */
-
-/* No transitions in v0.1 — but the `@media` block exists so future
-   animation work has a clear opt-out point. */
-@media (prefers-reduced-motion: reduce) {
-  [data-mention-popover],
-  [data-mention-item] {
-    transition: none !important;
-    animation: none !important;
   }
 }

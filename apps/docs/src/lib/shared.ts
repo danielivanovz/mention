@@ -1,4 +1,4 @@
-export const appName = "@danielivanovz/mention";
+export const appName = "@danielivanov/mention";
 export const docsRoute = "/docs";
 export const docsImageRoute = "/og/docs";
 export const docsContentRoute = "/llms.mdx/docs";

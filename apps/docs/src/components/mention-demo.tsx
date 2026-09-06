@@ -1,6 +1,6 @@
 "use client";
 
-// `@danielivanovz/mention` uses client React APIs (useState, useReducer, useEffect,
+// `@danielivanov/mention` uses client React APIs (useState, useReducer, useEffect,
 // useId). Next 16 / RSC defaults components to server-rendered, so this
 // wrapper file carries the `"use client"` directive and is what MDX
 // imports — keeping the lib RSC-agnostic (no "use client" directive
@@ -11,7 +11,7 @@
 // channel switching as the dispatcher's backwards scan resolves a
 // different trigger char; consumers just declare the channels.
 
-import { Mention } from "@danielivanovz/mention";
+import { Mention } from "@danielivanov/mention";
 
 interface Person {
   id: string;

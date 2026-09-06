@@ -6,10 +6,6 @@
     "controlled-value",
     "multi-trigger",
     "styling",
-    "i18n",
-    "---Rich-text editors---",
-    "lexical",
-    "tiptap",
-    "slate"
+    "i18n"
   ]
 }

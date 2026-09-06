@@ -1,40 +1,57 @@
 import { getCaretCoordinates } from "../text/caret.ts";
-import type { MentionInsertResult } from "../text/replace.ts";
 import type { EditorAdapter } from "./types.ts";
 
-/**
- * Adapter for `<textarea>` hosts — extracted from `useMentionCore` +
- * `text/replace.ts:60` (the prior `commitMentionToTextarea`). Same
- * native-setter trick so React's synthetic-event tracker sees the
- * change; same `getCaretCoordinates` mirror-div for caret rect.
- */
 export function createTextareaAdapter(
-  textarea: HTMLTextAreaElement,
+  element: HTMLTextAreaElement,
 ): EditorAdapter {
   return {
-    element: textarea,
-    getValue: () => textarea.value,
-    getCaretOffset: () => textarea.selectionStart,
-    getCaretRect: () => {
-      const rect = textarea.getBoundingClientRect();
-      try {
-        const caret = getCaretCoordinates(textarea, textarea.selectionStart);
-        const x = rect.left + caret.left - textarea.scrollLeft;
-        const y = rect.top + caret.top - textarea.scrollTop;
-        return new DOMRect(x, y, 1, caret.height);
-      } catch {
+    element,
+    read() {
+      if (
+        element.disabled ||
+        element.readOnly ||
+        element.selectionStart !== element.selectionEnd
+      )
         return null;
-      }
+      return { text: element.value, caret: element.selectionStart };
     },
-    applyInsert: (result: MentionInsertResult) => {
-      const nativeSet = Object.getOwnPropertyDescriptor(
-        HTMLTextAreaElement.prototype,
-        "value",
-      )?.set;
-      nativeSet?.call(textarea, result.value);
-      textarea.dispatchEvent(new Event("input", { bubbles: true }));
-      textarea.setSelectionRange(result.caret, result.caret);
+    getCaretRect() {
+      const caret = getCaretCoordinates(element, element.selectionStart);
+      const rect = element.getBoundingClientRect();
+      return new DOMRect(
+        rect.left + caret.left - element.scrollLeft,
+        rect.top + caret.top - element.scrollTop,
+        0,
+        caret.height,
+      );
     },
-    focus: () => textarea.focus(),
+    replace({ from, to, text }) {
+      if (element.disabled || element.readOnly) return false;
+      const doc = element.ownerDocument;
+      const window = doc.defaultView;
+      const setter =
+        window &&
+        Object.getOwnPropertyDescriptor(
+          window.HTMLTextAreaElement.prototype,
+          "value",
+        )?.set;
+      if (!window || !setter) return false;
+      element.focus();
+      element.setSelectionRange(from, to);
+      // insertText preserves native undo history. Some engines/hosts lack it;
+      // the setter fallback still supports React's normal onChange contract.
+      const expected =
+        element.value.slice(0, from) + text + element.value.slice(to);
+      if (
+        typeof doc.execCommand === "function" &&
+        doc.execCommand("insertText", false, text) &&
+        element.value === expected
+      )
+        return true;
+      setter.call(element, expected);
+      element.setSelectionRange(from + text.length, from + text.length);
+      element.dispatchEvent(new window.Event("input", { bubbles: true }));
+      return true;
+    },
   };
 }

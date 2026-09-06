@@ -4,7 +4,7 @@
 // same list, distinguished only by glyph and `getInsertText` (channels
 // keep the `#` sigil; members get `@`).
 
-import { Mention } from "@danielivanovz/mention";
+import { Mention } from "@danielivanov/mention";
 
 interface ChatTarget {
   id: string;

@@ -4,7 +4,7 @@
 // piece of context". `getInsertText` returns the resource path with a
 // leading `@` so the LLM-prompt convention reads naturally.
 
-import { Mention } from "@danielivanovz/mention";
+import { Mention } from "@danielivanov/mention";
 
 interface Resource {
   id: string;

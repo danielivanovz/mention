@@ -1,75 +1,42 @@
 ---
 title: Troubleshooting
-description: Common pitfalls and how to debug mention behaviour fast.
+description: Diagnose detection, editor registration, positioning, and async behavior.
 ---
 
-## Popover doesn't open
+## Suggestions do not open
 
-Most "doesn't open" reports are one of three causes:
+Check that the trigger begins a word, composition has ended, and the host is editable with a collapsed selection. A bare hook must spread `getInputProps()` onto its textarea. A custom editor must call `setEditor()` and `refresh()`.
 
-1. **Trigger sits mid-word.** The library suppresses mid-word triggers — `foo@bar` is not a mention, it's an email. To trigger, the character before `@` must be whitespace, start-of-input, or a CJK / Thai / Khmer / Lao / Myanmar character. Type a space first, or override the trigger character.
-2. **Composition in progress.** During IME composition (Japanese, Chinese Pinyin), the library suppresses dispatch until `compositionend`. Commit the composition (Enter on the IME) and the popover opens on the post-commit value.
-3. **Items returned an empty array on initial query.** With a sync `items=[]`, the popover opens but `<Mention.Empty>` renders. With an async fetcher that returns `[]` immediately, the same happens — verify with `useMention()`'s `status` field; if it's `"success"` and `items.length === 0`, that's the empty branch.
+An empty successful result still opens the popup; add `Mention.Empty` to explain that state.
 
-## Popover appears far from the caret
+## A selection does not commit
 
-The caret-anchored popover uses a mirror-div technique that copies a long list of style properties from the textarea to compute pixel-correct caret coordinates. Mismatches cause drift:
+Commit rejects obsolete results and changed selections. Move the caret to the intended query or type again. A custom adapter should report the current text and caret together and apply replacements using the same offset units.
 
-- **Custom fonts loading after mount.** When the font swaps in, the textarea's character widths change but the popover position was computed against the fallback font's metrics. The library updates on `query` change, so the next keystroke re-anchors. For a one-shot fix at the moment of font load, force a re-anchor by toggling input focus.
-- **Transformed ancestors.** If a parent has `transform: scale(0.95)` (or similar), the textarea's `getBoundingClientRect()` reflects the transformed bounds while the mirror runs at native scale. Avoid transforms on ancestors of the textarea, or compose your own anchor via `useMention()`.
-- **CSS `zoom`.** Same class of problem as `transform: scale`. Avoid on ancestors.
+## Controlled values do not update
 
-## `key` warning in React 19 dev
+Use `value` and `onChange` on `Mention.Input`. For hooks, pass them into `getInputProps({ value, onChange })`. Do not overwrite the returned handlers or ref afterward.
 
-React 19 strict-mode warns when `key` arrives via spread. Don't pass `key` through `getItemProps`:
+## Async results disappear while typing
 
-```tsx
-// ❌ wrong — key arrives via spread
-{items.map((u, i) => (
-  <li {...m.getItemProps(u, i)}>…</li>
-))}
+Old results are intentionally removed as soon as a query changes. Display `Mention.Loading` while waiting. Keep the fetcher reference stable unless its behavior changes. Forward the abort signal to network requests to avoid unnecessary work; the library also rejects late results when the fetcher ignores cancellation.
 
-// ✅ right — key is explicit
-{items.map((u, i) => (
-  <li key={getKey(u)} {...m.getItemProps(u, i)}>…</li>
-))}
-```
+## Caret positioning drifts
 
-The compound `<Mention.List>` handles this internally — only escape-hatch users see this.
+The built-in textarea mirror measures browser text layout. Font loading, transformed ancestors, and CSS zoom can change that geometry. Reproduce without those factors first. A rich editor adapter should use its editor's viewport caret measurement.
 
-## `aria-allowed-role` axe violation
+## Accessibility checker reports a role violation
 
-axe flags `role="combobox"` on `<textarea>` as not allowed. This is a documented exception — HTML-ARIA says no, ARIA 1.2 says yes, and the pattern ships in production at GitHub, Slack, Linear, and Ariakit. The runtime AT contract works (NVDA / JAWS / VoiceOver / TalkBack all narrate correctly); only the static linter complains. Suppress it via your axe config for the input element.
+The persistent combobox role on the textarea conflicts with the HTML-ARIA authoring restriction. This is a known issue, not proof that the checker is wrong. See [Accessibility](/docs/accessibility) for current behavior and verification limits.
 
-See [Accessibility](/docs/accessibility) for the full list of documented exceptions.
+## Popup is clipped or outside the desired reading order
 
-## Async fetcher: results flash and disappear
+The default popup portals into the host document's body. Set `container` to an appropriate application container, or `container={null}` to render in place. Test the resulting layout and reading order with the assistive technologies your application supports.
 
-You forgot to forward the `AbortSignal`. Without it, the in-flight request from the previous query resolves *after* the fresh one and overwrites the list. Always pass `signal` to every `fetch` inside the fetcher:
+## Undo differs between hosts
 
-```ts
-async function searchUsers(query: string, signal: AbortSignal) {
-  const r = await fetch(`/api/users?q=${query}`, { signal });
-  //                                               ^^^^^^^^ ← this line
-  return r.json();
-}
-```
+Rich editor history belongs to its transaction system. The textarea adapter uses the browser's insertion command to preserve native history where supported. WebKit can group the preceding typing and mention into one undo step; Chromium and Firefox separate them in the tested flow. Its value-setter fallback still notifies React but cannot guarantee a native undo entry.
 
-## Focus jumps when the popover opens
+## Reporting a problem
 
-The library never moves focus — it stays on the textarea (the combobox-as-substring contract). If focus is jumping, either:
-
-- A custom `onFocus` / `onBlur` handler is responding to popover open events. Check what fires when `[aria-expanded="true"]` toggles.
-- `<Mention.Popover container={someElement}>` is portaling to a node with a focus trap (Radix Dialog, etc.). Pass `container={null}` to render in-place.
-
-## TalkBack swipe order skips the popover
-
-Android's TalkBack walks the DOM in source order; portaled popovers render at `document.body`, which TalkBack reaches *after* the rest of the page. Pass `<Mention.Popover container={null}>` to render in-place — the popover is then a direct sibling of the textarea and TalkBack reaches it on the very next swipe.
-
-## Bundle size jumped after upgrading
-
-The library's published surface is `size-limit`-enforced at 12 kB gzip. Upgrades that exceed it fail CI; if your bundle inflated past that, the cause is downstream (one of your dependencies) — check with `npx source-map-explorer`.
-
-## Still stuck?
-
-Reproduce in a fresh sandbox using the [quick-start snippet](/docs#usage) and open an issue with the repro link. Include the React version, a minimal `Mention.Root` config, and a video or screenshot of the broken state.
+Include a minimal example, React and browser versions, the host type, and exact typing/selection steps. For rich editors, include the adapter and document schema.
