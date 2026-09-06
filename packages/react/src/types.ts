@@ -84,7 +84,7 @@ export interface MentionContext<T> {
   handleKeyDown: (event: MentionKeyEvent) => boolean;
   /** Registers the textarea adapter and composes native React props. */
   getInputProps: (props?: Omit<MentionInputProps, "ref">) => MentionInputProps;
-  /** ARIA attributes for editor hosts with their own event system. */
+  /** Suggestion relationships. The host supplies its own textbox semantics. */
   getEditorProps: () => HTMLAttributes<HTMLElement>;
   getPopoverProps: () => HTMLAttributes<HTMLDivElement>;
   getItemProps: (

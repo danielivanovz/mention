@@ -1,11 +1,11 @@
 {
   "title": "Recipes",
   "pages": [
-    "async-items",
-    "custom-rendering",
     "controlled-value",
+    "async-items",
     "multi-trigger",
     "styling",
+    "custom-rendering",
     "i18n"
   ]
 }

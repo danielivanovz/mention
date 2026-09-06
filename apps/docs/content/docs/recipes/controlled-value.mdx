@@ -1,43 +1,52 @@
 ---
-title: Controlled value
-description: Use standard React textarea state and form props.
+title: Controlled forms
+description: Validate, submit, and reset a real form while Mention preserves ordinary textarea behavior.
 ---
 
-The textarea owns its value. Pass normal `value` and `onChange` props to `Mention.Input`.
+Your form owns the text. Mention writes selections through the input's normal change handler, so typed text and inserted mentions follow the same state and submission path.
 
-```tsx
-import { useState } from "react";
-import { Mention } from "@danielivanov/mention";
+## Try the form
 
-type Person = { id: string; name: string };
-const people: Person[] = [{ id: "alice", name: "Alice" }];
+Submit an empty message to see validation. Then type `@al`, select Alice, and submit again. The receipt shows the actual `FormData` value. Reset clears the text, validation, and receipt, and returns focus to the input.
 
-export function MessageInput() {
-  const [value, setValue] = useState("");
-  return (
-    <Mention.Root items={people} getKey={p => p.id} getLabel={p => p.name}>
-      <Mention.Input name="message" value={value}
-        onChange={e => setValue(e.currentTarget.value)} aria-label="Message" />
-      <Mention.Popover aria-label="People">
-        <Mention.List<Person>>
-          {p => <Mention.Item value={p}>{p.name}</Mention.Item>}
-        </Mention.List>
-      </Mention.Popover>
-    </Mention.Root>
-  );
-}
-```
+<div className="docs-example not-prose">
+  <MessageForm />
+</div>
 
-Typing and mention insertion both notify the supplied handler. `ref`, `onBlur`, `onInput`, and `onKeyDown` are also preserved. A consumer key handler can call `preventDefault()` to override Mention's keyboard handling.
+This example keeps submissions on the page. In your application, send the validated form data through your existing submission handler.
 
-With the standalone hook, pass props into its getter:
+## Use the complete example
 
-```tsx
+The running form, this source block, and the browser test fixture use the same component. No form library or Mention-specific form wrapper is needed. Style the native form controls with your application's design system.
+
+<include meta='title="MessageForm.tsx"'>../../../../../packages/react/examples/MessageForm.tsx</include>
+
+## Validation and focus
+
+The form uses `noValidate` to display its own required-field error. It checks trimmed text on submission, connects the error to the textarea with `aria-describedby`, sets `aria-invalid`, and focuses the invalid field through its ordinary React ref. Correcting the value clears the error.
+
+Enter commits a highlighted suggestion instead of submitting the form. Outside suggestion selection, Enter retains its normal multiline-input behavior. The submit button follows the usual form path.
+
+With a form library, pass its `value`, change handler, blur handler, name, and ref to `Mention.Input`. Do not treat Root's `onSelect` callback as a replacement for the field's change handler: it only reports completed mention insertions.
+
+## Reset controlled state
+
+Reset updates React state explicitly. The example uses `flushSync` so the cleared value reaches the textarea before the imperative focus and `close()` calls. Closing then records the cleared value, allowing the same query to reopen even when pasted back in one event. This also covers a programmatic `form.reset()` while the popup is open.
+
+When adapting this to an existing form, use its reset operation for the value, touched state, and errors, and close any active mention session. A programmatic value change is not a native input event.
+
+## Preserve the document model
+
+Submission contains plain text. An `onSelect` callback is a notification of insertion, not an inventory of mentions still present: users can delete or replace text afterward. If mentions need stable identities and round-trip serialization, store them in an editor document using [an editor adapter](/docs/rich-text).
+
+The standalone hook uses the same form props:
+
+```tsx title="Standalone hook"
 <textarea {...mention.getInputProps({
   value,
-  onChange: e => setValue(e.currentTarget.value),
+  onChange: (event) => setValue(event.currentTarget.value),
   "aria-label": "Message",
 })} />
 ```
 
-An `onSelect` callback is a notification of insertion, not an inventory of mentions still present in the document. Users can delete or replace text afterward. If mentions need stable identities and round-trip serialization, store them in an editor document using [an editor adapter](/docs/integrations/rich-text).
+Render the hook's listbox and options with their corresponding getters; see the [API reference](/docs/api-reference) for the full hook contract.

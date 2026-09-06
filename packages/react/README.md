@@ -35,6 +35,6 @@ For multiple triggers, supply `triggers={{ "@": peopleConfig, "#": channelConfig
 
 Rich editors register an `EditorAdapter<T>` with `setEditor()`. The adapter reads one text region, measures the caret, and replaces a range using the editor's own transaction. The editor owns chips, formatting, clipboard data, and undo. See the executable [ProseMirror example](./examples/ProseMirror.tsx), which is exercised by browser tests. Other editor integrations need their own adapters and verification.
 
-The textarea implementation retains a persistent combobox role. This conflicts with the HTML-ARIA textarea role restriction, and automated checks do not prove assistive-technology compatibility. See the [accessibility documentation](../../apps/docs/content/docs/accessibility.mdx) for the testing boundary.
+Textareas retain their native textbox semantics. Rich editors supply their own textbox role and multiline state; Mention adds listbox and active-option relationships. Automated checks do not prove assistive-technology compatibility. See the [accessibility documentation](../../apps/docs/content/docs/accessibility.mdx) for the testing boundary.
 
 Run `bun run build`, `bun run test`, and `bun run test:e2e` from the repository root. The size budget is 14 kB gzipped, including Floating UI. The editor example is outside the published runtime.

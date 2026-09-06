@@ -11,7 +11,7 @@ import { expect, test } from "@playwright/test";
 
 test.beforeEach(async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("combobox", { name: /comment/i }).focus();
+  await page.getByRole("textbox", { name: /comment/i }).focus();
 });
 
 test("typing @ at the start opens the listbox; DOM focus stays on the textarea", async ({
@@ -28,7 +28,7 @@ test("typing @ at the start opens the listbox; DOM focus stays on the textarea",
   // Anti-outcome this test prevents: a future "fix" that moves DOM
   // focus into the listbox to drive arrow-key nav. That breaks every
   // soft-keyboard, every IME, and silently fails the spec.
-  const textarea = page.getByRole("combobox", { name: /comment/i });
+  const textarea = page.getByRole("textbox", { name: /comment/i });
   await expect(textarea).toBeFocused();
 
   await page.keyboard.type("@");
@@ -39,7 +39,7 @@ test("typing @ at the start opens the listbox; DOM focus stays on the textarea",
   // DOM focus is *still* on the textarea — never on the listbox.
   await expect(textarea).toBeFocused();
 
-  await expect(textarea).toHaveAttribute("aria-expanded", "true");
+  await expect(textarea).toHaveAttribute("aria-controls", /.+/);
 
   const listboxId = await listbox.getAttribute("id");
   if (!listboxId) throw new Error("listbox is missing an id attribute");
@@ -59,7 +59,7 @@ test("typing @ at the start opens the listbox; DOM focus stays on the textarea",
 test("ArrowDown/Up moves the visual highlight without shifting DOM focus", async ({
   page,
 }) => {
-  const textarea = page.getByRole("combobox", { name: /comment/i });
+  const textarea = page.getByRole("textbox", { name: /comment/i });
   await page.keyboard.type("@");
 
   await expect
@@ -83,7 +83,7 @@ test("ArrowDown/Up moves the visual highlight without shifting DOM focus", async
 test("Enter commits the highlighted option and closes the menu", async ({
   page,
 }) => {
-  const textarea = page.getByRole("combobox", { name: /comment/i });
+  const textarea = page.getByRole("textbox", { name: /comment/i });
   await page.keyboard.type("@");
 
   await expect
@@ -96,7 +96,7 @@ test("Enter commits the highlighted option and closes the menu", async ({
   // `getInsertText = u => "@" + u.username`, so commits land as `@xxx `.
   await expect(textarea).toHaveValue(/^@\w+\s$/);
   await expect(page.getByRole("listbox")).toHaveCount(0);
-  await expect(textarea).toHaveAttribute("aria-expanded", "false");
+  await expect(textarea).not.toHaveAttribute("aria-controls");
 });
 
 test("Escape closes the menu but preserves the typed @text", async ({
@@ -111,7 +111,7 @@ test("Escape closes the menu but preserves the typed @text", async ({
   // semantics, which clear the textbox. Doing that in a mention-in-
   // editor context would wipe the user's entire comment whenever they
   // dismiss a stray suggestion.
-  const textarea = page.getByRole("combobox", { name: /comment/i });
+  const textarea = page.getByRole("textbox", { name: /comment/i });
   await page.keyboard.type("@al");
   await expect(page.getByRole("listbox")).toBeVisible();
 
@@ -132,19 +132,19 @@ test("mid-word @ does not trigger (foo@bar email pattern)", async ({
   // Anti-outcome: relaxing the "isolation" rule in the reducer to also
   // fire mid-word — superficially simpler but wrecks UX for any text
   // containing an email address.
-  const textarea = page.getByRole("combobox", { name: /comment/i });
+  const textarea = page.getByRole("textbox", { name: /comment/i });
   await page.keyboard.type("hello foo@bar");
 
   await expect(page.getByRole("listbox")).toHaveCount(0);
-  await expect(textarea).toHaveAttribute("aria-expanded", "false");
+  await expect(textarea).not.toHaveAttribute("aria-controls");
 });
 
 test("isolated @ after whitespace does trigger", async ({ page }) => {
-  const textarea = page.getByRole("combobox", { name: /comment/i });
+  const textarea = page.getByRole("textbox", { name: /comment/i });
   await page.keyboard.type("hello @al");
 
   await expect(page.getByRole("listbox")).toBeVisible();
-  await expect(textarea).toHaveAttribute("aria-expanded", "true");
+  await expect(textarea).toHaveAttribute("aria-controls", /.+/);
 });
 
 // Use case: a user fixing a typo clicks back into an existing `@ali`
@@ -157,10 +157,10 @@ test("isolated @ after whitespace does trigger", async ({ page }) => {
 test("cursor placed inside an existing mention re-opens the menu on the next keystroke", async ({
   page,
 }) => {
-  const textarea = page.getByRole("combobox", { name: /comment/i });
+  const textarea = page.getByRole("textbox", { name: /comment/i });
   await page.keyboard.type("Hey @ali word");
   // Trailing whitespace closes the popover.
-  await expect(textarea).toHaveAttribute("aria-expanded", "false");
+  await expect(textarea).not.toHaveAttribute("aria-controls");
   await expect(page.getByRole("listbox")).toBeHidden();
 
   // Move the caret between '@' and 'a' (index 5 of "Hey @ali word"). We
@@ -173,7 +173,7 @@ test("cursor placed inside an existing mention re-opens the menu on the next key
 
   await page.keyboard.type("d");
 
-  await expect(textarea).toHaveAttribute("aria-expanded", "true");
+  await expect(textarea).toHaveAttribute("aria-controls", /.+/);
   const listbox = page.getByRole("listbox");
   await expect(listbox).toBeVisible();
   // Resolved query="d" → narrows to usernames starting with d.
@@ -185,7 +185,7 @@ test("cursor placed inside an existing mention re-opens the menu on the next key
 test("typing letters filters the listbox without changing DOM focus", async ({
   page,
 }) => {
-  const textarea = page.getByRole("combobox", { name: /comment/i });
+  const textarea = page.getByRole("textbox", { name: /comment/i });
   await page.keyboard.type("@a");
 
   await expect(textarea).toBeFocused();
@@ -209,7 +209,7 @@ test("typing letters filters the listbox without changing DOM focus", async ({
 test("dispatch is suppressed during IME composition; runs on compositionend", async ({
   page,
 }) => {
-  const textarea = page.getByRole("combobox", { name: /comment/i });
+  const textarea = page.getByRole("textbox", { name: /comment/i });
   await page.keyboard.type("@");
   await expect(page.getByRole("listbox")).toBeVisible();
   // Sanity baseline — without typing, all options visible.
@@ -253,7 +253,7 @@ test("dispatch is suppressed during IME composition; runs on compositionend", as
 });
 
 test("Backspace through @ closes the menu", async ({ page }) => {
-  const textarea = page.getByRole("combobox", { name: /comment/i });
+  const textarea = page.getByRole("textbox", { name: /comment/i });
   await page.keyboard.type("@a");
   await expect(page.getByRole("listbox")).toBeVisible();
 
@@ -264,32 +264,20 @@ test("Backspace through @ closes the menu", async ({ page }) => {
   await expect(textarea).toHaveValue("");
 });
 
-test("the textarea announces itself as a combobox to assistive technology", async ({
+test("native textarea semantics remain intact before and during suggestions", async ({
   page,
 }) => {
-  // Use case: a screen-reader user navigates to the comment field. The
-  // AT needs to know — before any '@' is typed — that this input has
-  // suggestion behavior, so it can hint "type at-sign for mentions" or
-  // similar. Contract: role=combobox + aria-autocomplete=list +
-  // aria-haspopup=listbox on the textarea itself.
-  //
-  // Anti-outcome: a refactor that only sets these attributes when the
-  // popover is open. That makes the field's suggestion capability
-  // invisible to AT until the user has already discovered it by typing
-  // — which they may never do. (This is the bug spike 002 caught in
-  // Base UI Combobox's dynamic-role mutation; the rejection rationale
-  // is captured in `docs/adr/0001-…md`.)
-  const textarea = page.getByRole("combobox", { name: /comment/i });
-
-  const haspopup = await textarea.getAttribute("aria-haspopup");
-  expect(["listbox", null]).toContain(haspopup);
-
-  const autocomplete = await textarea.getAttribute("aria-autocomplete");
-  expect(["list", "both"]).toContain(autocomplete);
-
-  // Idle state: aria-expanded is "false", not absent. Important for
-  // some AT engines that read absence as "indeterminate".
-  await expect(textarea).toHaveAttribute("aria-expanded", "false");
+  const textarea = page.getByRole("textbox", { name: /comment/i });
+  await expect(textarea).not.toHaveAttribute("role");
+  await expect(textarea).not.toHaveAttribute("aria-expanded");
+  await expect(textarea).not.toHaveAttribute("aria-controls");
+  await expect(textarea).toHaveAttribute("aria-haspopup", "listbox");
+  await expect(textarea).toHaveAttribute("aria-autocomplete", "list");
+  await page.keyboard.type("@");
+  await expect(page.getByRole("listbox")).toBeVisible();
+  await expect(textarea).not.toHaveAttribute("role");
+  await expect(textarea).not.toHaveAttribute("aria-expanded");
+  await expect(textarea).toBeFocused();
 });
 
 test("ARIA snapshot — captures the runtime contract", async ({ page }) => {
@@ -298,16 +286,16 @@ test("ARIA snapshot — captures the runtime contract", async ({ page }) => {
   // diff instead of silently breaking AT behavior.
   await page.keyboard.type("@");
 
-  const textarea = page.getByRole("combobox", { name: /comment/i });
+  const textarea = page.getByRole("textbox", { name: /comment/i });
   // Wait for activedescendant to populate (one render boundary after
-  // ITEMS_CHANGED auto-highlights).
+  // the current results are highlighted).
   await expect
     .poll(async () => textarea.getAttribute("aria-activedescendant"))
     .toMatch(/.+/);
 
   const snapshot = await page.evaluate(() => {
     const ta = document.querySelector(
-      'textarea[role="combobox"]',
+      "textarea#comment",
     ) as HTMLTextAreaElement | null;
     const listbox = document.querySelector('[role="listbox"]');
     const firstOption = document.querySelector('[role="option"]');
@@ -324,8 +312,12 @@ test("ARIA snapshot — captures the runtime contract", async ({ page }) => {
     };
   });
 
-  expect(snapshot.textarea?.role).toBe("combobox");
-  expect(snapshot.textarea?.["aria-expanded"]).toBe("true");
+  expect(snapshot.textarea?.role).toBeUndefined();
+  expect(snapshot.textarea?.["aria-expanded"]).toBeUndefined();
+  expect(snapshot.textarea?.["aria-controls"]).toBe(snapshot.listbox?.id);
+  expect(snapshot.textarea?.["aria-activedescendant"]).toBe(
+    snapshot.firstOption?.id,
+  );
   expect(snapshot.textarea?.["aria-haspopup"]).toBe("listbox");
   expect(snapshot.textarea?.["aria-autocomplete"]).toBe("list");
   expect(snapshot.listbox?.role).toBe("listbox");
@@ -346,7 +338,7 @@ test("pointer hover moves aria-activedescendant without shifting DOM focus", asy
   //
   // Real `page.mouse.move()` produces non-zero `movementX/Y` events,
   // satisfying the `isMouseMoving` guard naturally. No extra setup.
-  const textarea = page.getByRole("combobox", { name: /comment/i });
+  const textarea = page.getByRole("textbox", { name: /comment/i });
   await page.keyboard.type("@");
 
   await expect
@@ -389,7 +381,7 @@ test("multi-trigger: typing @ vs # routes to different channels in one editor", 
   //   user typed @al, dismissed, then typed #ge and Enter, the wrong
   //   item could land. The dispatcher resets channel state on each
   //   OPEN_AT.
-  const multi = page.getByRole("combobox", { name: /multi/i });
+  const multi = page.getByRole("textbox", { name: /multi/i });
   await multi.focus();
 
   // `@` channel — the harness wires user records, rendered as `@username`.
@@ -418,7 +410,7 @@ test("multi-trigger: per-channel getInsertText fires on commit", async ({
   // User need: each channel can format its insertion differently —
   //   `@user` for users, `#chan` for channels. Verify the active
   //   channel's `getInsertText` is the one that lands in the textarea.
-  const multi = page.getByRole("combobox", { name: /multi/i });
+  const multi = page.getByRole("textbox", { name: /multi/i });
   await multi.focus();
 
   await page.keyboard.type("#gen");

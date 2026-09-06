@@ -7,6 +7,8 @@ The editor keeps DOM focus while suggestions are navigated. The popup uses `role
 
 Name the input with a label or `aria-label`, and give the listbox an accessible name through `Mention.Popover`.
 
+For the implementation details behind these relationships, see [Focus and ARIA](/docs/internals/interaction).
+
 ## Keyboard behavior
 
 | Key | Behavior while suggestions are open |
@@ -18,17 +20,20 @@ Name the input with a label or `aria-label`, and give the listbox an accessible 
 
 Blur and outside pointer interaction dismiss the list. Consumer key handlers can prevent Mention from handling a key.
 
-## Known conformance issue
+## Preserve native text semantics
 
-The textarea implementation currently uses a persistent `role="combobox"`. The [HTML-ARIA textarea entry](https://www.w3.org/TR/html-aria/#el-textarea) does not permit this role. ARIA's browser processing rules do not override HTML author conformance requirements.
+`Mention.Input` remains a native textarea with its implicit `textbox` role. Mention supplies suggestion relationships without assigning `role` or `aria-expanded` to the host. The [HTML-ARIA textarea entry](https://www.w3.org/TR/html-aria/#el-textarea) permits the native textbox semantics. [WAI-ARIA permits a textbox](https://www.w3.org/TR/wai-aria-1.2/#aria-activedescendant) to reference an active option inside a listbox identified by `aria-controls`.
 
-The existing role behavior is retained pending a focused accessibility design and manual verification. It should not be described as unconditionally conformant.
-
-A portaled listbox can also trigger axe's `region` best-practice rule because it is outside a landmark. Use `container={null}` or an appropriate landmark container when needed.
+For a rich editor, provide its accessible name, `role="textbox"`, and `aria-multiline="true"` on the editable host, then apply `getEditorProps()` as the suggestion state changes. See the complete [ProseMirror example](/docs/rich-text).
 
 ## Verification
 
-Browser tests check focus, keyboard behavior, attribute relationships, and axe's automated rules. A separate test records the known `aria-allowed-role` and `region` findings so additional failures remain visible.
+Browser tests check focus, keyboard behavior, attribute relationships, and automated accessibility rules. The idle textareas and the short lists in the executable composer and form examples pass unfiltered axe checks. The textarea role needs no rule exception.
+
+Two findings are recorded explicitly in the larger test fixture:
+
+- `scrollable-region-focusable`: axe's heuristic exempts combobox popups, but does not recognize this textbox-controlled list. Mention keeps focus in the textarea; arrow keys select and scroll options into view. Browser tests verify access beyond the scroll boundary. Do not add a second tab stop merely to silence the rule; verify keyboard access in your actual host.
+- `region`: a listbox portaled to the body may sit outside a landmark. Use `container={null}` or an appropriate landmark container for your application's layout and reading order.
 
 The original prototype had user-reported assistive-technology testing. That result does not validate the current implementation or this structural revision. The current library still needs manual checks with NVDA, JAWS, VoiceOver, and TalkBack, plus real OS IMEs. Synthetic composition tests cover event handling, not real candidate-window behavior.
 

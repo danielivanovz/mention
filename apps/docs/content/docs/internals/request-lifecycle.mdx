@@ -1,0 +1,59 @@
+---
+title: Request lifecycle
+description: Why a late response cannot become a suggestion for a newer editing session.
+---
+
+A query string is not enough to identify a request. Two paragraphs can contain the same `@al`, and a user can move the caret while a request is pending. Mention ties results to an editing session, then checks the host again before applying an edit.
+
+## Detect the active query
+
+The detector scans backward from the collapsed caret. It accepts a configured trigger at the start of the region, after whitespace, or after a character from a supported non-whitespace-segmented script. It stops at whitespace or an ineligible trigger. `foo@bar` does not open a session.
+
+Triggers are one non-whitespace UTF-16 character. Queries cannot contain whitespace. Script boundaries are a character-level heuristic; the [international input guide](/docs/recipes/i18n) documents the supported scripts and the Han-plus-email ambiguity.
+
+`refresh()` keeps the same session object when its text, caret, key, trigger, and query are unchanged. A meaningful change creates a new session. Closing remembers the dismissed snapshot so an unchanged refresh does not immediately reopen it; `setOpen(true)` clears that dismissal and rescans.
+
+## Arrays and fetchers take different paths
+
+| Item source | Current behavior |
+| --- | --- |
+| Array | Filter labels during render using a case-insensitive substring match; status is `success`. |
+| Fetcher | Wait for the debounce delay, then call the fetcher with the query and an `AbortSignal`. |
+
+The default async debounce is 150 ms. A session reports `loading` during that delay and while the request is pending. A resolved empty array is a successful empty result; a thrown or rejected request reports `error`. There is no built-in cache, ranking, pagination, or automatic retry.
+
+See [async items](/docs/recipes/async-items) for a typed fetcher and error UI.
+
+## Cancel work and reject obsolete results
+
+Each request effect creates an `AbortController`. Cleanup clears the debounce timer and aborts the controller when its dependencies change, the session closes, or the component unmounts. Forward the signal to your network client to stop unnecessary work.
+
+Cancellation is only one guard. The render path exposes a result only if its session object and fetcher still match and its signal is not aborted. Until then, it returns an empty list with `loading` status. This hides old results before the next request effect runs. A late response from an aborted request is also ignored, even if the fetcher did not cooperate with cancellation.
+
+For example:
+
+| Event | Visible result |
+| --- | --- |
+| Type `@a`; request A starts | Loading, no old items |
+| Type `l`; request B starts for `@al` | Loading; A is obsolete |
+| B resolves | B's items |
+| A resolves late | B's items remain current |
+
+Keep the fetcher reference stable when its behavior is unchanged. A new function is a new source and restarts the request.
+
+## Check again at insertion
+
+`commit(item)` requires a current session, successful results containing that item, and an unchanged host snapshot. It also refuses to run during composition. `getKey()` identifies rendered items; it is not the membership check used by `commit()`. Pass the actual result item, not a reconstructed object with the same ID.
+
+The key handler checks the snapshot before navigating or selecting. If a selection moved without the expected refresh, it closes the stale session instead of replacing unrelated text. Hosts still need to call `refresh()` promptly: the guard prevents a stale edit, but does not update a host that never reports its changes.
+
+## Follow the implementation
+
+Paths are relative to `packages/react`:
+
+- `src/state/find-active-mention.ts`: trigger and boundary scan.
+- `src/hooks/use-channel-query.ts`: filtering, debounce, cancellation, and result ownership.
+- `src/hooks/useMentionCore.ts`: session identity and insertion checks.
+- `src/components/editing.test.tsx`: reversed request ordering, ignored cancellation, channel switches, failure, unmount cleanup, and moved selections.
+
+The tests exercise the real core rather than a separate request simulation.

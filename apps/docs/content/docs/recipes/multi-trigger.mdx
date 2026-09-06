@@ -6,6 +6,8 @@ description: Give each trigger its own items and insertion format.
 Use a `triggers` map to share one editor between channels.
 
 ```tsx
+"use client";
+
 import { Mention, type UseMentionMultiProps } from "@danielivanov/mention";
 
 type Person = { id: string; name: string };
@@ -27,11 +29,7 @@ const triggers: UseMentionMultiProps<Channels>["triggers"] = {
 
 export function Composer() {
   return (
-    <Mention.Root<Channels> triggers={triggers}
-      onSelect={payload => {
-        if ("@" in payload) console.log(payload["@"].id);
-        else console.log(payload["#"].slug);
-      }}>
+    <Mention.Root<Channels> triggers={triggers}>
       <Mention.Input aria-label="Message" />
       <Mention.Popover aria-label="Suggestions">
         <Mention.List<Person> trigger="@">
@@ -47,7 +45,7 @@ export function Composer() {
 }
 ```
 
-Each list's generic must match its channel. React context cannot check that relationship across separate Root and List elements. The `onSelect` payload does preserve the declared channel types.
+Each list's generic must match its channel. React context cannot check that relationship across separate Root and List elements. If you need the optional `onSelect` notification, its payload preserves the declared channel types: check `"@" in payload` to read a person from `payload["@"]`, or read a channel from `payload["#"]` in the other branch.
 
 The closest valid trigger before the caret determines the active channel. Only that channel is queried. Switching channels aborts the previous request and immediately hides its results. Arrays are filtered locally; fetchers receive the current query and an abort signal.
 

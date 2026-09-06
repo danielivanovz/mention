@@ -1,0 +1,57 @@
+---
+title: Caret positioning
+description: From a textarea mirror or an editor measurement to the suggestion list's position.
+---
+
+The popover consumes a viewport-relative caret rectangle from the editor adapter. How that rectangle is measured depends on the host. A textarea needs a temporary layout mirror; a rich editor uses its own measurement API.
+
+## Measuring a textarea
+
+The textarea's internal text layout is not exposed as DOM text nodes that Mention can measure with a `Range`. `getCaretCoordinates()` builds a temporary `div` in `document.body` and asks the browser to lay out the same text.
+
+1. Copy the computed properties that affect layout: dimensions, borders, padding, fonts, spacing, direction, and bidi behavior. Set wrapping on the mirror to preserve line breaks and wrap long words.
+2. Put the text before the caret into the mirror, then put the remaining text inside a trailing `span`. The remainder matters: it preserves wrapping when the caret falls inside a word.
+3. Read the span's position and add the textarea's border offsets. Use the computed line height, with measured text height or font size as fallbacks.
+4. Remove the mirror in a `finally` block, including when measurement fails.
+
+The mirror is created and removed for each measurement. It is not a persistent sibling beside the input, and the span contains the suffix rather than being a zero-width cursor.
+
+At the end of the value, the span needs a fallback character to produce layout. The implementation uses a period for left-to-right text and a strong right-to-left character for RTL text. In RTL flow it reads the span's right edge. Firefox also has a separate overflow branch to match the textarea's wrapping.
+
+## Translate into viewport coordinates
+
+The textarea adapter combines that local measurement with the textarea's bounding rectangle and subtracts the input's own scroll offsets:
+
+```text
+x = textarea.left + caret.left - textarea.scrollLeft
+y = textarea.top  + caret.top  - textarea.scrollTop
+width = 0
+height = measured line height
+```
+
+The result is a `DOMRect` in viewport coordinates. Floating UI then converts that reference into the popup's positioned layout. Scrolling inside a textarea and scrolling its surrounding page are different parts of this calculation.
+
+## Rich editors supply the rectangle
+
+`EditorAdapter.getCaretRect()` performs the host-specific measurement. The ProseMirror example uses `view.coordsAtPos()` and returns a zero-width rectangle with the measured line height. Mention does not build a text mirror for that editor.
+
+If the adapter returns `null`, the popover falls back to the editor element's bounding rectangle. That provides a positioning fallback, not a precise caret measurement.
+
+## Place and constrain the list
+
+`Mention.Popover` gives Floating UI a virtual reference whose `contextElement` is the editor. It requests `bottom-start` placement, a 4 px offset, flipping when space is constrained, and shifting with 8 px padding. Its maximum height is limited by available space and the `maxHeight` prop, which defaults to 280 px.
+
+Floating UI's `autoUpdate` handles relevant scroll and resize changes while the reference and popup are mounted. Mention also requests an update when the popup opens or its query changes. The default popup portal is the editor document's body; `container={null}` renders it in place, and an element selects a custom portal container.
+
+## Verify actual geometry
+
+Test the [working textarea](/#playground) and your own integration at line endings, wrapped words, scroll boundaries, and with realistic fonts and RTL content. A visible approximation of the mirror cannot establish where the library's popup actually lands.
+
+Paths relative to `packages/react`:
+
+- `src/text/caret.ts`: temporary mirror and local coordinates.
+- `src/adapters/textarea.ts`: viewport conversion.
+- `src/components/Popover.tsx`: virtual reference, collision handling, and portal.
+- `src/text/caret.browser.test.ts`: browser layout assertions for borders, line height, newlines, RTL and cleanup.
+
+Those fixtures cover selected geometry cases, not every font or mixed-direction layout. For integration issues, see [positioning troubleshooting](/docs/troubleshooting#caret-positioning-drifts).

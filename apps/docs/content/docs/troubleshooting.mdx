@@ -25,9 +25,9 @@ Old results are intentionally removed as soon as a query changes. Display `Menti
 
 The built-in textarea mirror measures browser text layout. Font loading, transformed ancestors, and CSS zoom can change that geometry. Reproduce without those factors first. A rich editor adapter should use its editor's viewport caret measurement.
 
-## Accessibility checker reports a role violation
+## Accessibility checker reports a scrolling list
 
-The persistent combobox role on the textarea conflicts with the HTML-ARIA authoring restriction. This is a known issue, not proof that the checker is wrong. See [Accessibility](/docs/accessibility) for current behavior and verification limits.
+Mention uses the focused textbox to navigate suggestions and scroll the highlighted option into view. Axe can report `scrollable-region-focusable` because its heuristic recognizes combobox-controlled popups but not textbox-controlled ones. Check arrow-key access to every option and preserve the host's focus. See [Accessibility](/docs/accessibility#verification) for the recorded findings and manual verification limits.
 
 ## Popup is clipped or outside the desired reading order
 

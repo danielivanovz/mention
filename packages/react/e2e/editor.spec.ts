@@ -2,12 +2,12 @@ import { expect, test } from "@playwright/test";
 
 test.beforeEach(async ({ page }) => {
   await page.goto("/?editor=1");
-  await page.getByRole("combobox", { name: "Rich message" }).focus();
+  await page.getByRole("textbox", { name: "Rich message" }).focus();
 });
 test("chips are document nodes and survive later mentions in another paragraph", async ({
   page,
 }) => {
-  const editor = page.getByRole("combobox", { name: "Rich message" });
+  const editor = page.getByRole("textbox", { name: "Rich message" });
   await page.keyboard.type("@Al");
   await page.keyboard.press("Enter");
   await expect(editor.locator("[data-mention-id=alice]")).toHaveText("@Alice");
@@ -32,7 +32,7 @@ test("chips are document nodes and survive later mentions in another paragraph",
 test("undo restores the query, redo restores the chip, and deletion is undoable", async ({
   page,
 }) => {
-  const editor = page.getByRole("combobox", { name: "Rich message" });
+  const editor = page.getByRole("textbox", { name: "Rich message" });
   await page.keyboard.type("@Al");
   await page.keyboard.press("Enter");
   await page.keyboard.press("ControlOrMeta+z");
@@ -51,7 +51,7 @@ test("undo restores the query, redo restores the chip, and deletion is undoable"
 test("rich paste and mention insertion preserve formatting and block boundaries", async ({
   page,
 }) => {
-  const editor = page.getByRole("combobox", { name: "Rich message" });
+  const editor = page.getByRole("textbox", { name: "Rich message" });
   await editor.evaluate((el) => {
     const data = new DataTransfer();
     data.setData("text/html", "<p><strong>Heading</strong></p><p>@Bo</p>");

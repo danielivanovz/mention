@@ -93,6 +93,7 @@ export function useMentionCore<T = unknown>(props: CoreProps): CoreReturn<T> {
   const refresh = useCallback(() => {
     if (composing.current) return;
     const snapshot = editorRef.current?.read() ?? null;
+    if (!sameSnapshot(snapshot, dismissed.current)) dismissed.current = null;
     const active = snapshot
       ? findActiveMention(
           snapshot.text,
@@ -255,14 +256,22 @@ export function useMentionCore<T = unknown>(props: CoreProps): CoreReturn<T> {
   // biome-ignore lint/correctness/useExhaustiveDependencies: new results may remount the option at the same index.
   useEffect(() => {
     if (!activeOptionId) return;
-    editor?.element.ownerDocument
-      .getElementById(activeOptionId)
-      ?.scrollIntoView?.({ block: "nearest" });
-  }, [editor, activeOptionId, session, status]);
+    const doc = editor?.element.ownerDocument;
+    const list = doc?.getElementById(listboxId);
+    const option = doc?.getElementById(activeOptionId);
+    if (!list || !option) return;
+    const bounds = list.getBoundingClientRect();
+    const item = option.getBoundingClientRect();
+    const scaleY = bounds.height / list.offsetHeight || 1;
+    const top = bounds.top + list.clientTop * scaleY;
+    const bottom = top + list.clientHeight * scaleY;
+    // Scroll only the list; scrollIntoView can move the page before positioning.
+    if (item.top < top) list.scrollTop -= (top - item.top) / scaleY;
+    else if (item.bottom > bottom)
+      list.scrollTop += (item.bottom - bottom) / scaleY;
+  }, [editor, activeOptionId, listboxId, session, status]);
 
   const getEditorProps = (): React.HTMLAttributes<HTMLElement> => ({
-    role: "combobox",
-    "aria-expanded": open,
     "aria-haspopup": "listbox",
     "aria-autocomplete": "list",
     "aria-controls": open ? listboxId : undefined,

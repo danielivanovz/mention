@@ -1,0 +1,48 @@
+---
+title: Coding-agent guide
+description: Integrate Mention with a typed example, clear ownership, and checks you can verify.
+---
+
+Use this guide as the starting context for a coding agent working in an existing application. Read the [quickstart](/docs), then open only the recipes needed for the task. The [documentation index](/llms.txt) links directly to Markdown; [the full export](/llms-full.txt) is available when broader context is useful.
+
+Choose **Agent setup** above, review the prompt, then select **Copy prompt** and paste it into a coding agent with access to your project. The prompt asks the agent to inspect your app, read the relevant documentation, make a focused change, and verify it. On recipe pages, it includes that recipe's direct Markdown link. You can edit the request after pasting to specify your input, trigger, or data source.
+
+## Establish the host
+
+Mention is a headless **React 19** library for suggestions at the caret. Install `@danielivanov/mention` with the application's package manager, for example `npm install @danielivanov/mention`. Import `@danielivanov/mention/styles.css` once if you want the default popup styles.
+
+- **Plain text:** use `Mention.Root`, `Mention.Input`, `Mention.Popover`, `Mention.List<T>`, and `Mention.Item`. The input is a native textarea. Preserve the application's existing `value`, `onChange`, form attributes, and refs.
+- **Structured editor content:** implement `EditorAdapter<T>`. The editor owns its document, mention nodes, selection model, transactions, clipboard behavior, and undo. Mention owns detection, suggestions, highlight, and selection. Never replace the rich editor's DOM or flatten its document into textarea state.
+
+## Implement the smallest integration
+
+Use the complete [typed quickstart](/docs#add-a-composer) as the reference. Declare an item type with a stable key and a search label; pass `getKey` and `getLabel` to Root. Write `Mention.List<Person>` explicitly. React context cannot infer a list's type from Root, or verify that a multi-trigger list matches its channel.
+
+In Next.js App Router, put `"use client"` at the top of the component containing state, event handlers, or the item render function. The package's client boundary does not make function props created by a server component serializable.
+
+`onSelect` is an optional notification after insertion; it is not required to insert a mention and does not track which mentions remain in the document. A textarea inserts text, not persistent mention entities. Do not add placeholder callbacks or duplicate the input's value in a separate mention state.
+
+Arrays are filtered locally by case-insensitive label substring. An async fetcher has type `(query: string, signal: AbortSignal) => Promise<readonly Person[]>`; it supplies its own search results. Forward `signal` to network calls and keep the fetcher reference stable. The default debounce is 150 ms. The core also rejects obsolete results when a fetcher ignores cancellation.
+
+For an editor adapter, register with `setEditor(adapter)`, clear it on cleanup, call `refresh()` after document or selection transactions, and forward keyboard events through `handleKeyDown` before editor bindings. Use consistent UTF-16 offsets within one text region. See [editor integration](/docs/rich-text) and the [adapter contract](/docs/api-reference#editor-adapter).
+
+## Open the relevant reference
+
+- [Controlled forms](/docs/recipes/controlled-value) for form state and event composition.
+- [Async search](/docs/recipes/async-items) for request and error handling.
+- [Multiple triggers](/docs/recipes/multi-trigger) for typed channels.
+- [Custom rendering](/docs/recipes/custom-rendering) and [styling](/docs/recipes/styling) for application-owned UI.
+- [API reference](/docs/api-reference) for public types and props.
+- [Troubleshooting](/docs/troubleshooting) for detection, registration, and positioning failures.
+
+## Verify the integration
+
+Run the application's type check and relevant tests. Then exercise the real host:
+
+1. Type `@al` at a valid boundary. Navigate with arrow keys, insert with Enter or Tab, and verify both the displayed text and form state. Escape should dismiss without editing; focus should stay in the host.
+2. Test no matches, blur, pointer selection, and moving the caret before insertion. Old results must not insert into a changed selection.
+3. For async search, resolve an older request after a newer one. Confirm that only current results appear and can be selected. Verify loading, empty, and failed requests separately.
+4. For rich editors, verify mention serialization, paragraph boundaries, formatting, paste, undo, redo, and node deletion in that editor's document model.
+5. Check names, visible focus/highlight, dialogs, portals, scrolling, and composition. Follow the [accessibility verification limits](/docs/accessibility#verification).
+
+Report the commands run, the interaction outcomes observed, and any checks left unperformed. The executable ProseMirror example establishes only its tested integration; adapters for other editors require their own verification. Preserve the textarea's native textbox semantics. A rich editor supplies its own textbox role and multiline state; Mention supplies suggestion relationships. Automated browser tests do not prove assistive-technology compatibility or real OS IME behavior.

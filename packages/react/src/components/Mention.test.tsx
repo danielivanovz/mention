@@ -39,18 +39,14 @@ function Demo({ onSelect }: { onSelect?: (u: User) => void } = {}) {
   );
 }
 
-describe("Mention — combobox-as-substring contract", () => {
-  // User need: the textarea must permanently advertise role=combobox so
-  //   AT can announce the editable region as a combobox at all times,
-  //   not just when the popover is open.
-  // Anti-outcome: dynamic role mutation (the bug Spike 002 caught in
-  //   Base UI) confuses NVDA into losing the combobox semantics on
-  //   focus-out / focus-in cycles.
-  it("the textarea has role=combobox at rest with aria-expanded=false", () => {
+describe("Mention — textarea suggestions", () => {
+  it("preserves native textbox semantics and advertises suggestions at rest", () => {
     render(<Demo />);
 
-    const textarea = screen.getByRole("combobox", { name: "message" });
-    expect(textarea).toHaveAttribute("aria-expanded", "false");
+    const textarea = screen.getByRole("textbox", { name: "message" });
+    expect(textarea).not.toHaveAttribute("aria-controls");
+    expect(textarea).not.toHaveAttribute("role");
+    expect(textarea).not.toHaveAttribute("aria-expanded");
     expect(textarea).toHaveAttribute("aria-haspopup", "listbox");
     expect(textarea).toHaveAttribute("aria-autocomplete", "list");
   });
@@ -61,11 +57,14 @@ describe("Mention — combobox-as-substring contract", () => {
     const user = userEvent.setup();
     render(<Demo />);
 
-    const textarea = screen.getByRole("combobox", { name: "message" });
+    const textarea = screen.getByRole("textbox", { name: "message" });
     await user.click(textarea);
     await user.keyboard("@");
 
-    expect(textarea).toHaveAttribute("aria-expanded", "true");
+    expect(textarea).toHaveAttribute(
+      "aria-controls",
+      expect.stringMatching(/.+/),
+    );
     const listbox = screen.getByRole("listbox");
     expect(listbox).toBeVisible();
     expect(within(listbox).getAllByRole("option")).toHaveLength(USERS.length);
@@ -76,11 +75,11 @@ describe("Mention — combobox-as-substring contract", () => {
     const user = userEvent.setup();
     render(<Demo />);
 
-    const textarea = screen.getByRole("combobox", { name: "message" });
+    const textarea = screen.getByRole("textbox", { name: "message" });
     await user.click(textarea);
     await user.keyboard("foo@");
 
-    expect(textarea).toHaveAttribute("aria-expanded", "false");
+    expect(textarea).not.toHaveAttribute("aria-controls");
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
   });
 
@@ -90,7 +89,7 @@ describe("Mention — combobox-as-substring contract", () => {
     const user = userEvent.setup();
     render(<Demo />);
 
-    const textarea = screen.getByRole("combobox", { name: "message" });
+    const textarea = screen.getByRole("textbox", { name: "message" });
     await user.click(textarea);
     await user.keyboard("@dar");
 
@@ -106,14 +105,14 @@ describe("Mention — combobox-as-substring contract", () => {
     const user = userEvent.setup();
     render(<Demo />);
 
-    const textarea = screen.getByRole("combobox", { name: "message" });
+    const textarea = screen.getByRole("textbox", { name: "message" });
     await user.click(textarea);
     await user.keyboard("@dan");
     expect(screen.getByRole("listbox")).toBeVisible();
 
     await user.keyboard("{Escape}");
 
-    expect(textarea).toHaveAttribute("aria-expanded", "false");
+    expect(textarea).not.toHaveAttribute("aria-controls");
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
     expect(textarea).toHaveValue("@dan");
   });
@@ -124,7 +123,7 @@ describe("Mention — combobox-as-substring contract", () => {
     const user = userEvent.setup();
     render(<Demo />);
 
-    const textarea = screen.getByRole("combobox", { name: "message" });
+    const textarea = screen.getByRole("textbox", { name: "message" });
     await user.click(textarea);
     await user.keyboard("@d");
     expect(screen.getByRole("listbox")).toBeVisible();
@@ -133,7 +132,7 @@ describe("Mention — combobox-as-substring contract", () => {
     expect(screen.getByRole("listbox")).toBeVisible(); // still open with empty query
 
     await user.keyboard("{Backspace}");
-    expect(textarea).toHaveAttribute("aria-expanded", "false");
+    expect(textarea).not.toHaveAttribute("aria-controls");
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
     expect(textarea).toHaveValue("");
   });
@@ -149,7 +148,7 @@ describe("Mention — combobox-as-substring contract", () => {
     const user = userEvent.setup();
     render(<Demo />);
 
-    const textarea = screen.getByRole("combobox", {
+    const textarea = screen.getByRole("textbox", {
       name: "message",
     }) as HTMLTextAreaElement;
     await user.click(textarea);
@@ -157,7 +156,7 @@ describe("Mention — combobox-as-substring contract", () => {
 
     // Trailing whitespace closes the popover — same posture as the
     //   "backspacing through trigger" test above.
-    expect(textarea).toHaveAttribute("aria-expanded", "false");
+    expect(textarea).not.toHaveAttribute("aria-controls");
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
 
     // Move the caret between '@' and 'a' (index 5 in "Hey @ali word").
@@ -167,7 +166,10 @@ describe("Mention — combobox-as-substring contract", () => {
     //   (the substring between '@' and the new caret).
     await user.keyboard("d");
 
-    expect(textarea).toHaveAttribute("aria-expanded", "true");
+    expect(textarea).toHaveAttribute(
+      "aria-controls",
+      expect.stringMatching(/.+/),
+    );
     const listbox = screen.getByRole("listbox");
     expect(listbox).toBeVisible();
     // Value is now "Hey @dali word"; caret at 6; resolved query="d"
@@ -182,7 +184,7 @@ describe("Mention — combobox-as-substring contract", () => {
     const user = userEvent.setup();
     render(<Demo />);
 
-    const textarea = screen.getByRole("combobox", { name: "message" });
+    const textarea = screen.getByRole("textbox", { name: "message" });
     await user.click(textarea);
     await user.keyboard("@zzz");
 
@@ -218,7 +220,7 @@ describe("Mention — combobox-as-substring contract", () => {
       </Mention.Root>,
     );
 
-    const textarea = screen.getByRole("combobox", { name: "message" });
+    const textarea = screen.getByRole("textbox", { name: "message" });
     await user.click(textarea);
     await user.keyboard("@");
 
@@ -240,7 +242,7 @@ describe("Mention — combobox-as-substring contract", () => {
     const user = userEvent.setup();
     const { container } = render(<Demo />);
 
-    const textarea = screen.getByRole("combobox", { name: "message" });
+    const textarea = screen.getByRole("textbox", { name: "message" });
     await user.click(textarea);
     await user.keyboard("@");
 
@@ -271,7 +273,7 @@ describe("Mention — combobox-as-substring contract", () => {
       </Mention.Root>,
     );
 
-    const textarea = screen.getByRole("combobox", { name: "message" });
+    const textarea = screen.getByRole("textbox", { name: "message" });
     await user.click(textarea);
     await user.keyboard("@");
 
@@ -305,7 +307,7 @@ describe("Mention — combobox-as-substring contract", () => {
       </Mention.Root>,
     );
 
-    const textarea = screen.getByRole("combobox", { name: "message" });
+    const textarea = screen.getByRole("textbox", { name: "message" });
     await user.click(textarea);
     await user.keyboard("@");
 
@@ -316,7 +318,7 @@ describe("Mention — combobox-as-substring contract", () => {
     customRoot.remove();
   });
 
-  // User need: AT users with multiple comboboxes on the page (e.g. an
+  // User need: AT users with multiple textareas on the page (e.g. an
   //   `@user` field next to a `#channel` field) need to know which list
   //   they're in. Forwarding aria-label to the listbox lets consumers
   //   distinguish them ("People to mention", "Channels", etc.).
@@ -342,7 +344,7 @@ describe("Mention — combobox-as-substring contract", () => {
       </Mention.Root>,
     );
 
-    const textarea = screen.getByRole("combobox", { name: "message" });
+    const textarea = screen.getByRole("textbox", { name: "message" });
     await user.click(textarea);
     await user.keyboard("@");
 
@@ -370,7 +372,7 @@ describe("Mention — combobox-as-substring contract", () => {
       const user = userEvent.setup();
       render(<Demo />);
 
-      const textarea = screen.getByRole("combobox", {
+      const textarea = screen.getByRole("textbox", {
         name: "message",
       }) as HTMLTextAreaElement;
       await user.click(textarea);
@@ -404,12 +406,15 @@ describe("Mention — combobox-as-substring contract", () => {
       const user = userEvent.setup();
       render(<Demo />);
 
-      const textarea = screen.getByRole("combobox", {
+      const textarea = screen.getByRole("textbox", {
         name: "message",
       }) as HTMLTextAreaElement;
       await user.click(textarea);
       await user.keyboard("@");
-      expect(textarea).toHaveAttribute("aria-expanded", "true");
+      expect(textarea).toHaveAttribute(
+        "aria-controls",
+        expect.stringMatching(/.+/),
+      );
 
       fireEvent.compositionStart(textarea);
       fireEvent.change(textarea, { target: { value: "@a" } });
@@ -420,7 +425,7 @@ describe("Mention — combobox-as-substring contract", () => {
         data: " done",
       });
 
-      expect(textarea).toHaveAttribute("aria-expanded", "false");
+      expect(textarea).not.toHaveAttribute("aria-controls");
       expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
     });
 
@@ -433,7 +438,7 @@ describe("Mention — combobox-as-substring contract", () => {
       const user = userEvent.setup();
       render(<Demo />);
 
-      const textarea = screen.getByRole("combobox", {
+      const textarea = screen.getByRole("textbox", {
         name: "message",
       }) as HTMLTextAreaElement;
       await user.click(textarea);
@@ -477,7 +482,7 @@ describe("Mention — combobox-as-substring contract", () => {
       const commits: User[] = [];
       render(<Demo onSelect={onSelect} />);
 
-      const textarea = screen.getByRole("combobox", { name: "message" });
+      const textarea = screen.getByRole("textbox", { name: "message" });
       await user.click(textarea);
       await user.keyboard("@");
 
@@ -513,7 +518,7 @@ describe("Mention — combobox-as-substring contract", () => {
       const user = userEvent.setup();
       render(<Demo />);
 
-      const textarea = screen.getByRole("combobox", { name: "message" });
+      const textarea = screen.getByRole("textbox", { name: "message" });
       await user.click(textarea);
       await user.keyboard("@");
 
@@ -537,7 +542,7 @@ describe("Mention — combobox-as-substring contract", () => {
       const user = userEvent.setup();
       render(<Demo />);
 
-      const textarea = screen.getByRole("combobox", { name: "message" });
+      const textarea = screen.getByRole("textbox", { name: "message" });
       await user.click(textarea);
       await user.keyboard("@");
 
@@ -629,7 +634,7 @@ describe("Mention — multi-trigger Root overload", () => {
     const user = userEvent.setup();
     render(<MultiDemo />);
 
-    const textarea = screen.getByRole("combobox", { name: "message" });
+    const textarea = screen.getByRole("textbox", { name: "message" });
     await user.click(textarea);
 
     // Trigger the `@` channel.
@@ -662,7 +667,7 @@ describe("Mention — multi-trigger Root overload", () => {
       />,
     );
 
-    const textarea = screen.getByRole("combobox", { name: "message" });
+    const textarea = screen.getByRole("textbox", { name: "message" });
     await user.click(textarea);
     await user.keyboard("#gen");
     await user.keyboard("{Enter}");
@@ -678,7 +683,7 @@ describe("Mention — multi-trigger Root overload", () => {
     const user = userEvent.setup();
     render(<MultiDemo />);
 
-    const textarea = screen.getByRole("combobox", {
+    const textarea = screen.getByRole("textbox", {
       name: "message",
     }) as HTMLTextAreaElement;
     await user.click(textarea);
@@ -695,7 +700,7 @@ describe("Mention — multi-trigger Root overload", () => {
     const user = userEvent.setup();
     render(<MultiDemo />);
 
-    const textarea = screen.getByRole("combobox", {
+    const textarea = screen.getByRole("textbox", {
       name: "message",
     }) as HTMLTextAreaElement;
     await user.click(textarea);
@@ -714,7 +719,7 @@ describe("Mention — multi-trigger Root overload", () => {
     const user = userEvent.setup();
     render(<MultiDemo />);
 
-    const textarea = screen.getByRole("combobox", { name: "message" });
+    const textarea = screen.getByRole("textbox", { name: "message" });
     await user.click(textarea);
 
     // Trigger `@` — only the user-typed list should render.
@@ -740,7 +745,7 @@ describe("Mention — multi-trigger Root overload", () => {
     const user = userEvent.setup();
     render(<MultiDemo />);
 
-    const textarea = screen.getByRole("combobox", { name: "message" });
+    const textarea = screen.getByRole("textbox", { name: "message" });
     await user.click(textarea);
 
     await user.keyboard("@d");
@@ -748,7 +753,7 @@ describe("Mention — multi-trigger Root overload", () => {
     expect(options.map((o) => o.textContent)).toEqual(["Daniel", "Daria"]);
 
     await user.keyboard("{Escape}");
-    expect(textarea).toHaveAttribute("aria-expanded", "false");
+    expect(textarea).not.toHaveAttribute("aria-controls");
 
     // Note: "general" and "random" both contain 'r', so we use 'ran'
     // for a unique-to-`random` filter via the default substring match.

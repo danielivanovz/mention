@@ -1,99 +1,106 @@
 ---
-title: Async items
-description: Fetch suggestions over the network with debounced cancellation, loading and error states.
+title: Async search
+description: Fetch suggestions with debouncing, cancellation, loading, empty, and error states.
 ---
 
-`items` accepts a fetcher: `(query, signal) => Promise<readonly TItem[]>`. The library passes an `AbortSignal` you can hand straight to `fetch` — when the user keeps typing, in-flight requests get cancelled before they resolve, so late results never overwrite fresh ones.
+Pass a fetcher as `items`: `(query, signal) => Promise<readonly TItem[]>`. The fetcher supplies the search results; Mention does not apply the array filter to its response.
 
-## Minimal fetcher
+## Connect a search endpoint
+
+This component expects `/api/users?q=...` to return an array of users with `id`, `username`, and `name`. Implement that endpoint in your application or replace its URL and response validation to match your API.
 
 ```tsx
-import { Mention } from "@danielivanov/mention";
+"use client";
 
-interface User {
-  id: number;
-  username: string;
-  name: string;
+import { Mention, useMentionContext } from "@danielivanov/mention";
+import "@danielivanov/mention/styles.css";
+
+type User = { id: number; username: string; name: string };
+
+function isUser(value: unknown): value is User {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "id" in value && typeof value.id === "number" &&
+    "username" in value && typeof value.username === "string" &&
+    "name" in value && typeof value.name === "string"
+  );
 }
 
 async function searchUsers(
   query: string,
   signal: AbortSignal,
 ): Promise<readonly User[]> {
-  const res = await fetch(
+  const response = await fetch(
     `/api/users?q=${encodeURIComponent(query)}`,
     { signal },
   );
-  if (!res.ok) throw new Error(`Search failed: ${res.status}`);
-  return res.json();
+  if (!response.ok) throw new Error(`Search failed: ${response.status}`);
+
+  const data: unknown = await response.json();
+  if (!Array.isArray(data) || !data.every(isUser)) {
+    throw new Error("Unexpected search response");
+  }
+  return data;
+}
+
+function SearchError() {
+  const { status } = useMentionContext<User>();
+  return status === "error" ? (
+    <p role="alert">Could not load suggestions. Edit your query to try again.</p>
+  ) : null;
 }
 
 export function MessageInput() {
   return (
-    <Mention.Root
+    <Mention.Root<User>
       items={searchUsers}
-      getKey={(u) => u.id}
-      getLabel={(u) => u.name}
-      onSelect={(u) => console.log("picked", u)}
+      getKey={(user) => user.id}
+      getLabel={(user) => user.name}
     >
       <Mention.Input aria-label="Message" />
-      <Mention.Popover>
+      <Mention.Popover aria-label="People">
         <Mention.List<User>>
-          {(u) => (
-            <Mention.Item value={u}>
-              <strong>{u.name}</strong>
-              <span className="text-muted-foreground"> @{u.username}</span>
+          {(user) => (
+            <Mention.Item value={user}>
+              <strong>{user.name}</strong>
+              <span> @{user.username}</span>
             </Mention.Item>
           )}
         </Mention.List>
         <Mention.Loading>Searching…</Mention.Loading>
         <Mention.Empty>No people found</Mention.Empty>
       </Mention.Popover>
+      <SearchError />
     </Mention.Root>
   );
 }
 ```
 
-## Debouncing
+`useMentionContext<User>()` reads the existing Root session. A standalone `useMention()` call would create a separate session, so it is not the way to read that Root's status.
 
-The library debounces the fetcher by **150ms** by default. Tune via `debounceMs`:
+## Set the debounce delay
 
-```tsx
-<Mention.Root items={searchUsers} debounceMs={300} /* … */ />
-```
+Async requests debounce for **150 ms** by default. Set `debounceMs={300}` on Root to wait longer, or `debounceMs={0}` to start immediately. This delay applies only to fetchers, not synchronous item arrays.
 
-Pass `0` to disable — useful when items resolve instantly from a local cache.
+## Cancel unnecessary work
 
-## Cancellation
+Forward the supplied `AbortSignal` to `fetch`. When the query, channel, or fetcher changes, or the session closes, Mention aborts the previous request. Forwarding the signal lets the network client stop work that is no longer needed.
 
-The `AbortSignal` is the canonical lever — pass it to every async call inside the fetcher and the runtime takes care of the rest:
+The core also discards late results when a fetcher ignores cancellation. It hides previous results as soon as the query changes and will not commit an obsolete item. Cancellation saves work; it is not the sole protection against stale results.
 
-```ts
-async function searchUsers(query: string, signal: AbortSignal) {
-  const [users, channels] = await Promise.all([
-    fetch(`/api/users?q=${query}`, { signal }).then((r) => r.json()),
-    fetch(`/api/channels?q=${query}`, { signal }).then((r) => r.json()),
-  ]);
-  return [...users, ...channels];
-}
-```
+Keep the fetcher reference stable when its behavior has not changed: declare it outside the component, as above, or use `useCallback` with its real dependencies. A new fetcher reference starts a new request.
 
-When the query advances, the library calls `controller.abort()` on the previous signal, which propagates to every `fetch` and rejects the wrapping Promise with an `AbortError`. Results from aborted requests are ignored; a rejection of the active request produces the error status.
+## Show each outcome
 
-## Error and loading states
+- `Mention.Loading` renders while a request is pending.
+- `Mention.Empty` renders after a successful query with no results.
+- `status === "error"` identifies a rejected active request. The example shows this outside the listbox through a child of Root.
 
-`<Mention.Loading>` renders while the fetcher is pending. `<Mention.Empty>` renders when the resolved list is empty. The library exposes `status` via `useMention()` for finer-grained UI:
+Return `[]` for no matches. Throw for request, response, or parsing failures. Typing a new query starts another request; there is no built-in retry control.
 
-```tsx
-const { status } = useMention(props);
+Synchronous arrays may be created during render. The core derives their filtered results directly; fresh array references are not prohibited. Memoize expensive data preparation when your application benefits from it.
 
-if (status === "error") {
-  return <p role="alert">Couldn't load suggestions. Try again.</p>;
-}
-```
+## Verify request ordering
 
-## Common pitfalls
-
-- **Race conditions without the signal.** Forgetting to pass `signal` to `fetch` is the #1 source of "wrong list briefly flashes." Always include it.
-- **Returning fresh array references from sync data.** If `items` is an array, pass a stable reference (memoised, or hoisted out of the component) — fresh arrays per render trigger the same internal-state churn that pure async fetchers avoid.
-- **Throwing inside the fetcher for "no results."** Return `[]` instead. Empty is a valid steady state (`<Mention.Empty>` renders); throwing is reserved for transport / parse errors.
+Make one query slow and a later query fast. Confirm that the fast query's results remain current when the earlier request finally resolves, including when a test fetcher deliberately ignores the signal. Also test a rejected request and a successful empty response.

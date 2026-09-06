@@ -1,43 +1,56 @@
 ---
-title: "@danielivanov/mention"
-description: "Headless React mention suggestions for textareas and editor integrations."
+title: Quickstart
+description: Add typed mention suggestions to a React textarea.
 ---
 
-Mention adds suggestions at the caret while users write. Use a native textarea, or connect an editor that owns rich content and mention nodes.
+Mention opens suggestions at the caret while someone writes. Start with a native textarea for plain text, or [connect a rich-text editor](/docs/rich-text) when your document needs mention nodes, formatting, or editor history.
 
-```sh
-bun add @danielivanov/mention
+## Install
+
+Use an application with **React 19**, then install the package:
+
+```sh title="Install Mention"
+npm install @danielivanov/mention
 ```
 
-Requires React 19.
+With Bun, use `bun add @danielivanov/mention`. The stylesheet is optional; import it once for the default popup and option styles.
 
-```tsx
-import { Mention } from "@danielivanov/mention";
-import "@danielivanov/mention/styles.css";
+## Try the interaction
 
-type Person = { id: string; name: string };
-const people: Person[] = [{ id: "alice", name: "Alice" }];
+Type `@al` below to find Alice. Use ArrowDown and ArrowUp to navigate; Enter or Tab inserts the highlighted result. Escape dismisses suggestions without changing the message. Focus stays in the textarea, and Enter without an active suggestion adds a new line.
 
-export function Composer() {
-  return (
-    <Mention.Root items={people} getKey={p => p.id} getLabel={p => p.name}>
-      <Mention.Input aria-label="Message" name="message" />
-      <Mention.Popover aria-label="People">
-        <Mention.Loading>Searching…</Mention.Loading>
-        <Mention.List<Person>>
-          {person => <Mention.Item value={person}>{person.name}</Mention.Item>}
-        </Mention.List>
-        <Mention.Empty>No people found</Mention.Empty>
-      </Mention.Popover>
-    </Mention.Root>
-  );
-}
-```
+<div className="docs-example not-prose">
+  <Composer />
+</div>
 
-Typing `@` opens suggestions. Arrow keys change the highlighted item; Enter or Tab inserts it. Escape dismisses. Selection changes rescan the text. Consumer `onKeyDown` handlers can prevent the library's keyboard behavior.
+Selecting Alice inserts plain text, `@Alice`, followed by a separating space when needed. Arrays are filtered by a case-insensitive substring match on `getLabel`.
 
-- [Controlled forms](/docs/recipes/controlled-value) use normal textarea props.
-- [Multiple triggers](/docs/recipes/multi-trigger) share one host.
-- [Async search](/docs/recipes/async-items) cancels obsolete requests.
-- [Editor integrations](/docs/integrations/rich-text) preserve editor-owned documents and history.
-- [Accessibility](/docs/accessibility) describes behavior, known conformance issues, and verification limits.
+## Add a composer
+
+This is the complete source of the example above. The rendered example and this code block use the same file.
+
+In a Next.js App Router application, keep `"use client"` at the top: state, event handlers, and item render functions belong in a client component. Style the native label, hint, and textarea with your application's existing styles. The optional package stylesheet styles the suggestions.
+
+<include meta='title="Composer.tsx"'>../../../../packages/react/examples/Composer.tsx</include>
+
+`getKey` supplies each item's stable identity. `getLabel` supplies the local search label and default insertion label. Give `Mention.List` its item type explicitly: React context cannot infer that type from `Mention.Root`.
+
+The input supports normal textarea props, including `value`, `onChange`, `onBlur`, `onKeyDown`, and `ref`. A consumer key handler runs first and can call `preventDefault()` to override Mention's handling. `onSelect` on Root is optional; use it only when you need a notification after insertion.
+
+The example uses `container={null}` to keep the listbox within the article's landmark. Use a portal container when your application's clipping or layering requires one.
+
+## Choose your next step
+
+- [Controlled forms](/docs/recipes/controlled-value): keep text in your form's existing state.
+- [Async search](/docs/recipes/async-items): fetch suggestions with debouncing, cancellation, and status feedback.
+- [Multiple triggers](/docs/recipes/multi-trigger): combine people, channels, or other item types in one host.
+- [Styling](/docs/recipes/styling): use the optional stylesheet or your own design system.
+- [Rich-text editors](/docs/rich-text): keep structured mentions and edits in an editor document.
+- [API reference](/docs/api-reference): inspect component, hook, and adapter contracts.
+- [Coding-agent guide](/docs/agents): hand an integration task to a coding agent.
+
+## Verify in your application
+
+Check insertion, empty results, Escape, focus, and ordinary typing with your actual form state. Test the popup inside your dialogs and scrolling containers. For asynchronous data, also test requests resolving out of order.
+
+Read [Accessibility](/docs/accessibility) for the native textbox and listbox relationship, keyboard behavior, and manual verification guidance. Automated checks do not establish screen-reader or real OS IME compatibility.

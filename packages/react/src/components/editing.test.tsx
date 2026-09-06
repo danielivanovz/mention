@@ -6,15 +6,15 @@ import {
   renderHook,
   screen,
 } from "@testing-library/react";
-import { useRef, useState, StrictMode } from "react";
+import { StrictMode, useRef, useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { createTextareaAdapter } from "../adapters/textarea.ts";
 import {
   Mention,
+  type MentionImperativeHandle,
   useMention,
   useMentionMulti,
-  type MentionImperativeHandle,
 } from "../index.ts";
-import { createTextareaAdapter } from "../adapters/textarea.ts";
 
 const users = [
   { id: 1, name: "Alice" },
@@ -25,7 +25,7 @@ const config = {
   getKey: (u: (typeof users)[number]) => u.id,
   getLabel: (u: (typeof users)[number]) => u.name,
 };
-const input = () => screen.getByRole("combobox") as HTMLTextAreaElement;
+const input = () => screen.getByRole("textbox") as HTMLTextAreaElement;
 function type(value: string, caret = value.length) {
   fireEvent.input(input(), {
     target: { value, selectionStart: caret, selectionEnd: caret },
@@ -83,7 +83,10 @@ describe("public editing behavior", () => {
       </StrictMode>,
     );
     type("@");
-    expect(input()).toHaveAttribute("aria-expanded", "true");
+    expect(input()).toHaveAttribute(
+      "aria-controls",
+      expect.stringMatching(/.+/),
+    );
     fireEvent.keyDown(input(), { key: "Enter" });
     expect(input().value).toBe("@Alice ");
   });
@@ -134,10 +137,23 @@ describe("public editing behavior", () => {
     render(<Demo />);
     type("@");
     fireEvent.blur(input());
-    expect(input()).toHaveAttribute("aria-expanded", "false");
+    expect(input()).not.toHaveAttribute("aria-controls");
     type("@a");
     fireEvent.pointerDown(document.body);
-    expect(input()).toHaveAttribute("aria-expanded", "false");
+    expect(input()).not.toHaveAttribute("aria-controls");
+  });
+  it("keeps an unchanged query dismissed but reopens it after editing away and back", () => {
+    render(<Demo />);
+    type("@a");
+    fireEvent.keyDown(input(), { key: "Escape" });
+    fireEvent.select(input());
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    type("@");
+    expect(screen.getByRole("listbox")).toBeInTheDocument();
+    type("@a");
+    expect(screen.getByRole("listbox")).toBeInTheDocument();
+    fireEvent.keyDown(input(), { key: "Enter" });
+    expect(input().value).toBe("@Alice ");
   });
   it("cannot rewrite unrelated text when the caret moves without an input event", () => {
     render(<Demo />);
@@ -145,17 +161,20 @@ describe("public editing behavior", () => {
     input().setSelectionRange(0, 0);
     fireEvent.keyDown(input(), { key: "Enter" });
     expect(input().value).toBe("hello @a");
-    expect(input()).toHaveAttribute("aria-expanded", "false");
+    expect(input()).not.toHaveAttribute("aria-controls");
   });
   it("rescans selection-only changes and rejects expanded selections", () => {
     render(<Demo />);
     type("hello @a tail");
     input().setSelectionRange(8, 8);
     fireEvent.select(input());
-    expect(input()).toHaveAttribute("aria-expanded", "true");
+    expect(input()).toHaveAttribute(
+      "aria-controls",
+      expect.stringMatching(/.+/),
+    );
     input().setSelectionRange(6, 8);
     fireEvent.select(input());
-    expect(input()).toHaveAttribute("aria-expanded", "false");
+    expect(input()).not.toHaveAttribute("aria-controls");
   });
   it("preserves the suffix without adding duplicate whitespace", () => {
     render(<Demo />);
@@ -166,7 +185,7 @@ describe("public editing behavior", () => {
   it("does not offer edits for read-only inputs", () => {
     render(<Demo readOnly />);
     type("@");
-    expect(input()).toHaveAttribute("aria-expanded", "false");
+    expect(input()).not.toHaveAttribute("aria-controls");
   });
   it("imperative opening rescans the caret and forwards the host ref", () => {
     function Handles() {
@@ -196,7 +215,10 @@ describe("public editing behavior", () => {
       </StrictMode>,
     );
     fireEvent.click(screen.getByText("Open"));
-    expect(input()).toHaveAttribute("aria-expanded", "true");
+    expect(input()).toHaveAttribute(
+      "aria-controls",
+      expect.stringMatching(/.+/),
+    );
   });
 });
 
@@ -342,7 +364,7 @@ it("preserves the session when a controlled consumer supplies a new callback ref
   }
   render(<CallbackInput />);
   type("@a");
-  expect(input()).toHaveAttribute("aria-expanded", "true");
+  expect(input()).toHaveAttribute("aria-controls", expect.stringMatching(/.+/));
   fireEvent.keyDown(input(), { key: "Enter" });
   expect(input().value).toBe("@Alice ");
 });

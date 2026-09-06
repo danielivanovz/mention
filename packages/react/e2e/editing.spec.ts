@@ -1,11 +1,43 @@
 import { expect, test } from "@playwright/test";
 
+for (const popup of ["inline", "portal"]) {
+  test(`opening and navigating the ${popup} popup preserves the page scroll position`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`/?popup=${popup}`);
+    await page.addStyleTag({
+      content: "main { margin-block: 1200px !important; }",
+    });
+    const input = page.getByRole("textbox", { name: "Comment", exact: true });
+    await input.click();
+    const scrollY = await page.evaluate(() => window.scrollY);
+    expect(scrollY).toBeGreaterThan(0);
+    await input.pressSequentially("@");
+    await expect(page.getByRole("listbox")).toBeVisible();
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(scrollY);
+    for (let i = 0; i < 18; i++) await input.press("ArrowDown");
+    await expect(input).toBeFocused();
+    expect(await page.evaluate(() => window.scrollY)).toBe(scrollY);
+    const option = await page
+      .locator('[role="option"][aria-selected="true"]')
+      .boundingBox();
+    const list = await page.getByRole("listbox").boundingBox();
+    if (!option || !list)
+      throw new Error("The list and active option must be rendered.");
+    expect(option.y).toBeGreaterThanOrEqual(list.y);
+    expect(option.y + option.height).toBeLessThanOrEqual(
+      list.y + list.height + 1,
+    );
+  });
+}
+
 test("controlled textarea publishes one value and preserves native undo and redo", async ({
   page,
   browserName,
 }) => {
   await page.goto("/?controlled=1");
-  const input = page.getByRole("combobox", { name: "Controlled", exact: true });
+  const input = page.getByRole("textbox", { name: "Controlled", exact: true });
   await input.focus();
   await page.keyboard.type("hello @al");
   await page.keyboard.press("Enter");
@@ -20,7 +52,9 @@ test("controlled textarea publishes one value and preserves native undo and redo
   ).toBe("hello @alice ");
   await page.keyboard.press("ControlOrMeta+z");
   // WebKit may group preceding typing with insertText, depending on native history timing.
-  await expect(input).toHaveValue(browserName === "webkit" ? /^(?:hello @al)?$/ : "hello @al");
+  await expect(input).toHaveValue(
+    browserName === "webkit" ? /^(?:hello @al)?$/ : "hello @al",
+  );
   await page.keyboard.press("ControlOrMeta+Shift+Z");
   await expect(input).toHaveValue("hello @alice ");
   await expect(page.getByTestId("controlled-value")).toHaveText(
@@ -31,7 +65,7 @@ test("standalone hook supports insertion without compound Input", async ({
   page,
 }) => {
   await page.goto("/?controlled=1");
-  const input = page.getByRole("combobox", { name: "Standalone", exact: true });
+  const input = page.getByRole("textbox", { name: "Standalone", exact: true });
   await input.focus();
   await page.keyboard.type("@al");
   await page.keyboard.press("Enter");
@@ -41,7 +75,7 @@ test("moving the caret before committing never rewrites unrelated text", async (
   page,
 }) => {
   await page.goto("/");
-  const input = page.getByRole("combobox", { name: "Comment", exact: true });
+  const input = page.getByRole("textbox", { name: "Comment", exact: true });
   await input.focus();
   await page.keyboard.type("hello @al");
   await input.evaluate((el) =>
@@ -54,11 +88,16 @@ test("keyboard navigation reveals options below the popup scroll boundary", asyn
   page,
 }) => {
   await page.goto("/");
-  const input = page.getByRole("combobox", { name: "Comment", exact: true });
+  const input = page.getByRole("textbox", { name: "Comment", exact: true });
   await input.focus();
   await page.keyboard.type("@");
   for (let i = 0; i < 18; i++) await page.keyboard.press("ArrowDown");
   const active = page.locator('[role="option"][aria-selected="true"]');
+  await expect(input).toBeFocused();
+  await expect(input).toHaveAttribute(
+    "aria-activedescendant",
+    (await active.getAttribute("id"))!,
+  );
   const option = await active.boundingBox();
   const list = await page.getByRole("listbox").boundingBox();
   expect(option!.y).toBeGreaterThanOrEqual(list!.y);

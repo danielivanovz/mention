@@ -1,17 +1,17 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
+import {
+  type EditorAdapter,
+  Mention,
+  useMentionContext,
+} from "@danielivanov/mention";
+import { baseKeymap, toggleMark } from "prosemirror-commands";
+import { closeHistory, history, redo, undo } from "prosemirror-history";
+import { keymap } from "prosemirror-keymap";
 import { Schema } from "prosemirror-model";
 import { EditorState, TextSelection } from "prosemirror-state";
 import { EditorView } from "prosemirror-view";
-import { closeHistory, history, redo, undo } from "prosemirror-history";
-import { keymap } from "prosemirror-keymap";
-import { baseKeymap, toggleMark } from "prosemirror-commands";
-import {
-  Mention,
-  useMentionContext,
-  type EditorAdapter,
-} from "@danielivanov/mention";
+import { useLayoutEffect, useRef, useState } from "react";
 
 type Person = { id: string; name: string };
 const people: Person[] = [
@@ -89,7 +89,7 @@ function Editor({ onDocument }: { onDocument: (doc: string) => void }) {
         ],
       }),
       attributes: {
-        role: "combobox",
+        role: "textbox",
         "aria-label": "Rich message",
         "aria-multiline": "true",
         style:
@@ -170,7 +170,7 @@ function Editor({ onDocument }: { onDocument: (doc: string) => void }) {
 
   useLayoutEffect(() => {
     const attributes: Record<string, string> = {
-      role: "combobox",
+      role: "textbox",
       "aria-label": "Rich message",
       "aria-multiline": "true",
       style:
@@ -193,7 +193,7 @@ export function ProseMirrorDemo() {
       getLabel={(p) => p.name}
     >
       <Editor onDocument={setDocument} />
-      <Mention.Popover aria-label="People">
+      <Mention.Popover container={null} aria-label="People">
         <Mention.List<Person>>
           {(person) => (
             <Mention.Item value={person}>{person.name}</Mention.Item>

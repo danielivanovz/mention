@@ -14,6 +14,26 @@ const repoRoot = path.resolve(here, "../..");
 /** @type {import('next').NextConfig} */
 const config = {
   reactStrictMode: true,
+  async redirects() {
+    return [
+      {
+        source: "/docs/integrations/rich-text",
+        destination: "/docs/rich-text",
+        permanent: true,
+      },
+      { source: "/internals", destination: "/docs/internals", permanent: true },
+      {
+        source: "/internals/caret-anchoring",
+        destination: "/docs/internals/caret-anchoring",
+        permanent: true,
+      },
+      {
+        source: "/internals/aria-contract",
+        destination: "/docs/internals/interaction",
+        permanent: true,
+      },
+    ];
+  },
   turbopack: {
     root: repoRoot,
   },
