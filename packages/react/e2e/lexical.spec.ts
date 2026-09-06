@@ -177,6 +177,7 @@ test("a native caret move cannot commit an obsolete suggestion before selectionc
 
 test("composition suspends suggestions and resumes after composition ends", async ({
   page,
+  browserName,
 }) => {
   const editor = page.getByRole("textbox", { name: "Lexical message" });
   await page.keyboard.type("@Al");
@@ -189,7 +190,32 @@ test("composition suspends suggestions and resumes after composition ends", asyn
     keyCode: 229,
   });
   await expect(editor.locator("[data-mention-id]")).toHaveCount(0);
+  // Safari commits with insertFromComposition; Firefox follows compositionend with input.
+  // A bare compositionend leaves Lexical waiting for these native commit events.
+  if (browserName === "webkit") {
+    await editor.evaluate((element) =>
+      element.dispatchEvent(
+        new InputEvent("beforeinput", {
+          bubbles: true,
+          cancelable: true,
+          inputType: "insertFromComposition",
+          data: "",
+          isComposing: false,
+        }),
+      ),
+    );
+  }
   await editor.dispatchEvent("compositionend", { data: "" });
+  await editor.evaluate((element) =>
+    element.dispatchEvent(
+      new InputEvent("input", {
+        bubbles: true,
+        inputType: "insertCompositionText",
+        data: "",
+        isComposing: false,
+      }),
+    ),
+  );
   // This emulates lifecycle guards only; it is not a real OS IME claim.
   await page.keyboard.type("i");
   await expect(page.getByRole("option", { name: "Alice Chen" })).toBeVisible();
