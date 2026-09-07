@@ -49,10 +49,10 @@ export function Popover({
         : null,
     );
   }, [editor, refs.setReference]);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: typing moves the caret without resizing the host.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: a new snapshot can move the caret without changing the query or resizing the host.
   useEffect(() => {
     if (ctx.open) void update();
-  }, [ctx.open, ctx.query, update]);
+  }, [ctx.open, ctx.snapshot, update]);
   if (!ctx.open || !editor) return null;
   const popover = (
     <div

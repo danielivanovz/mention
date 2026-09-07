@@ -3,7 +3,7 @@
 Headless React mention suggestions for native textareas and editor integrations. Multiple triggers, async search, keyboard navigation, caret positioning, and optional styles. Requires React 19.
 
 ```sh
-bun add @danielivanov/mention
+bun add @danielivanov/mention@^0.2.0
 ```
 
 ```tsx

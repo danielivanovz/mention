@@ -1,9 +1,11 @@
 "use client";
 
 import { Mention, type MentionImperativeHandle } from "@danielivanov/mention";
+import { ArrowUpRight } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
+import { AIComposerDemo } from "./ai-composer-demo";
 import {
   type Person,
   PlaygroundCaption,
@@ -84,6 +86,7 @@ function TextareaPlayground({ active }: { active: boolean }) {
 export function MentionDemo() {
   const [mode, setMode] = useState("textarea");
   const [richLoaded, setRichLoaded] = useState(false);
+  const [aiLoaded, setAiLoaded] = useState(false);
   const tabs = useRef<Array<HTMLButtonElement | null>>([]);
   return (
     <section
@@ -101,6 +104,7 @@ export function MentionDemo() {
             {[
               ["textarea", "Textarea"],
               ["rich", "Rich editor"],
+              ["ai", "AI composer"],
             ].map(([value, label], index) => (
               <button
                 key={value}
@@ -116,13 +120,14 @@ export function MentionDemo() {
                 onClick={() => {
                   setMode(value);
                   if (value === "rich") setRichLoaded(true);
+                  if (value === "ai") setAiLoaded(true);
                 }}
                 onKeyDown={(event) => {
                   let next: number;
                   if (event.key === "ArrowLeft" || event.key === "ArrowRight")
-                    next = 1 - index;
+                    next = (index + (event.key === "ArrowRight" ? 1 : 2)) % 3;
                   else if (event.key === "Home") next = 0;
-                  else if (event.key === "End") next = 1;
+                  else if (event.key === "End") next = 2;
                   else return;
                   event.preventDefault();
                   tabs.current[next]?.focus();
@@ -151,6 +156,20 @@ export function MentionDemo() {
           hidden={mode !== "rich"}
         >
           {richLoaded && <RichPlayground active={mode === "rich"} />}
+        </div>
+        <div
+          id="playground-panel-ai"
+          role="tabpanel"
+          aria-labelledby="playground-tab-ai"
+          hidden={mode !== "ai"}
+        >
+          {aiLoaded && <AIComposerDemo active={mode === "ai"} />}
+          <p className="specimen-caption">
+            <a href="/docs/ai-composer">
+              Build this with shadcn/ui and AI SDK
+              <ArrowUpRight size={14} aria-hidden="true" />
+            </a>
+          </p>
         </div>
       </div>
     </section>

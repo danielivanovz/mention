@@ -141,15 +141,17 @@ function Editor({ onDocument }: { onDocument: (doc: string) => void }) {
       },
       replace(edit, person) {
         const { $from } = view.state.selection;
+        const marks = view.state.storedMarks ?? $from.marks();
         const from = $from.start() + edit.from;
         const to = $from.start() + edit.to;
-        const node = schema.nodes.mention!.create({
-          id: person.id,
-          label: person.name,
-        });
+        const node = schema.nodes.mention!.create(
+          { id: person.id, label: person.name },
+          null,
+          marks,
+        );
         const transaction = closeHistory(view.state.tr).replaceWith(from, to, [
           node,
-          schema.text(" "),
+          schema.text(" ", marks),
         ]);
         transaction.setSelection(
           TextSelection.create(transaction.doc, from + 2),

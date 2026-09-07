@@ -4,6 +4,8 @@
 
 ### Minor Changes
 
+- Keep the suggestion popup at the caret when moving between identical queries. Preserve active formatting when inserting mentions in the ProseMirror example.
+
 - Add per-channel `allowSpaces` and synchronous `filter(item, query)` for full-name and application-defined matching. Keep completed or dismissed multiword queries closed while continuing the sentence.
 
   Rich editors now own document edits and history through `EditorAdapter<T>` and `setEditor()`. Replace the former `Mention.Editable`, chip management, and registry APIs with the maintained ProseMirror or Lexical integration examples. Native textareas retain normal React values, handlers, refs, and form props.

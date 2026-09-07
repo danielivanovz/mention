@@ -2,6 +2,7 @@
 @import "fumadocs-ui/css/neutral.css";
 @import "fumadocs-ui/css/preset.css";
 @import "@danielivanov/mention/styles.css";
+@source "../../../../packages/react/examples/registry";
 
 :root {
   --ink: #172f52;
@@ -21,6 +22,15 @@
   --border: var(--border-subtle);
   --accent-foreground: var(--bg);
   --muted-foreground: var(--fg-muted);
+  --background: var(--bg);
+  --foreground: var(--fg);
+  --primary: var(--accent);
+  --primary-foreground: var(--bg);
+  --secondary: var(--bg-elevated);
+  --secondary-foreground: var(--fg);
+  --muted: var(--bg-elevated);
+  --input: var(--border-subtle);
+  --ring: var(--focus);
   --radius: 0.375rem;
   --type-display: clamp(2.5rem, 4vw, 4.5rem);
   --type-h1: clamp(2.25rem, 3vw, 3.5rem);
@@ -44,6 +54,17 @@
 }
 
 @theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
   --color-bg: var(--bg);
   --color-bg-elevated: var(--bg-elevated);
   --color-fg: var(--fg);
@@ -453,6 +474,13 @@ p {
 }
 .docs-code-block > [role="region"] {
   border-radius: var(--radius);
+}
+.ai-request pre {
+  max-height: 16rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin-top: 0.5rem;
 }
 .docs-code-block > [role="region"] pre {
   padding-right: 3.25rem;
@@ -899,4 +927,89 @@ div:has(+ #nd-sidebar-mobile) {
   margin-bottom: 0;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+
+/* The installable composer inherits the website's existing semantic palette. */
+.ai-composer-demo {
+  color: var(--fg);
+  background: var(--bg);
+  padding: clamp(1rem, 2.5vw, 1.5rem);
+  border-radius: var(--radius);
+}
+.ai-demo-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+.ai-composer [data-slot="input-group"] {
+  background: var(--bg);
+  box-shadow: none;
+}
+.ai-composer [data-slot="input-group"]:focus-within {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.ai-composer [data-slot="bubble-content"] p {
+  margin: 0;
+}
+.ai-composer [data-slot="message-content"] {
+  max-width: 72ch;
+}
+.ai-composer [contenteditable]:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+.ai-composer [data-slot="bubble-content"] {
+  border-radius: var(--radius);
+}
+.ai-composer [data-slot="message-scroller-viewport"]:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}
+.ai-composer [data-slot="input-group-control"] {
+  caret-color: var(--focus);
+}
+.ai-demo-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.8125rem;
+  color: var(--fg-muted);
+}
+.ai-demo-controls label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+.ai-demo-controls input {
+  accent-color: var(--focus);
+}
+.ai-request {
+  font-size: 0.8125rem;
+}
+.ai-request summary {
+  cursor: pointer;
+  padding-block: 0.5rem;
+}
+
+.ai-request summary:focus-visible,
+.ai-request pre:focus-visible,
+.ai-demo-controls input:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ai-composer *,
+  .ai-composer *::before,
+  .ai-composer *::after {
+    scroll-behavior: auto;
+    transition: none;
+    animation: none;
+  }
 }

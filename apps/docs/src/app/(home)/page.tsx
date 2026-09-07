@@ -29,7 +29,7 @@ export default function HomePage() {
       </section>
       <MentionDemo />
       <div className="start-band">
-        <CopyButton value="bun add @danielivanov/mention" />
+        <CopyButton value="bun add @danielivanov/mention@^0.2.0" />
         <Link className="foundry-button primary-button" href="/docs">
           Start building <ArrowRight aria-hidden="true" />
         </Link>
@@ -65,8 +65,7 @@ export default function HomePage() {
           </h2>
           <p>
             Mention handles detection, suggestions, and the popup. You own the
-            data, rendering, and document. Start with the defaults, then make it
-            fit.
+            data, rendering, and document.
           </p>
           <Link href="/docs/api-reference">
             Explore the API <ArrowRight size={19} aria-hidden="true" />
@@ -109,8 +108,8 @@ export default function HomePage() {
         <div>
           <h2 id="agent-title">Good context for your coding agent, too.</h2>
           <p>
-            A focused integration guide, typed examples, and direct Markdown.
-            The same reference, ready for the way you build.
+            Give your agent typed examples and Markdown docs for the integration
+            you're building.
           </p>
         </div>
         <Link href="/docs/agents">

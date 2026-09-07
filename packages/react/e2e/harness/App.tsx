@@ -1,4 +1,5 @@
 import { Mention } from "@danielivanov/mention";
+import { AIComposerDemo } from "../../examples/AIComposerDemo.tsx";
 import { AsyncSearch } from "../../examples/AsyncSearch.tsx";
 import { Composer } from "../../examples/Composer.tsx";
 import { LexicalDemo } from "../../examples/Lexical.tsx";
@@ -46,6 +47,13 @@ export function App() {
       <main>
         <h1>Quickstart</h1>
         <Composer />
+      </main>
+    );
+  if (params.get("example") === "ai-composer")
+    return (
+      <main>
+        <h1>AI composer</h1>
+        <AIComposerDemo />
       </main>
     );
   if (params.get("example") === "form")

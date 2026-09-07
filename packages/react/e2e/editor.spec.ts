@@ -4,6 +4,37 @@ test.beforeEach(async ({ page }) => {
   await page.goto("/?editor=1");
   await page.getByRole("textbox", { name: "Rich message" }).focus();
 });
+test("mention insertion preserves active marks through undo, redo, and continued typing", async ({
+  page,
+}) => {
+  const editor = page.getByRole("textbox", { name: "Rich message" });
+  await page.keyboard.press("ControlOrMeta+b");
+  await page.keyboard.type("@Al");
+  await expect(editor.locator("strong")).toHaveText("@Al");
+  await page.keyboard.press("Enter");
+  await expect(editor.locator("strong [data-mention-id=alice]")).toHaveText(
+    "@Alice",
+  );
+  const doc = JSON.parse(
+    (await page.getByTestId("editor-document").textContent()) ?? "{}",
+  );
+  expect(doc.content[0].content).toEqual([
+    {
+      type: "mention",
+      attrs: { id: "alice", label: "Alice" },
+      marks: [{ type: "strong" }],
+    },
+    { type: "text", text: " ", marks: [{ type: "strong" }] },
+  ]);
+  await page.keyboard.press("ControlOrMeta+z");
+  await expect(editor.locator("strong")).toHaveText("@Al");
+  await page.keyboard.press("ControlOrMeta+Shift+Z");
+  await expect(editor.locator("strong [data-mention-id=alice]")).toHaveText(
+    "@Alice",
+  );
+  await page.keyboard.type("next");
+  await expect(editor.locator("strong")).toHaveText("@Alice next");
+});
 test("chips are document nodes and survive later mentions in another paragraph", async ({
   page,
 }) => {
