@@ -105,16 +105,18 @@ export default function HomePage() {
         </div>
       </section>
       <section className="agent-section" aria-labelledby="agent-title">
-        <div>
-          <h2 id="agent-title">Good context for your coding agent, too.</h2>
-          <p>
-            Give your agent typed examples and Markdown docs for the integration
-            you're building.
-          </p>
+        <div className="agent-section-inner">
+          <div>
+            <h2 id="agent-title">Good context for your coding agent, too.</h2>
+            <p>
+              Give your agent typed examples and Markdown docs for the
+              integration you're building.
+            </p>
+          </div>
+          <Link href="/docs/agents">
+            Read the agent guide <ArrowRight size={20} aria-hidden="true" />
+          </Link>
         </div>
-        <Link href="/docs/agents">
-          Read the agent guide <ArrowRight size={20} aria-hidden="true" />
-        </Link>
       </section>
       <footer className="landing-footer">
         <Link href="/" className="site-brand" aria-label="Mention home">
