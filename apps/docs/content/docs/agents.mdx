@@ -9,7 +9,7 @@ Choose **Agent setup** above, review the prompt, then select **Copy prompt** and
 
 ## Establish the host
 
-Mention is a headless **React 19** library for suggestions at the caret. Install `@danielivanov/mention` with the application's package manager, for example `npm install @danielivanov/mention`. Import `@danielivanov/mention/styles.css` once if you want the default popup styles.
+Mention is a headless **React 19** library for suggestions at the caret. These examples require Mention 0.2: install `@danielivanov/mention@^0.2.0` with the application's package manager. Import `@danielivanov/mention/styles.css` once if you want the default popup styles.
 
 - **Plain text:** use `Mention.Root`, `Mention.Input`, `Mention.Popover`, `Mention.List<T>`, and `Mention.Item`. The input is a native textarea. Preserve the application's existing `value`, `onChange`, form attributes, and refs.
 - **Structured editor content:** implement `EditorAdapter<T>`. The editor owns its document, mention nodes, selection model, transactions, clipboard behavior, and undo. Mention owns detection, suggestions, highlight, and selection. Never replace the rich editor's DOM or flatten its document into textarea state.

@@ -1,4 +1,7 @@
+import { readUIMessageStream, simulateReadableStream, streamText } from "ai";
+import { MockLanguageModelV4 } from "ai/test";
 import { describe, expect, it, vi } from "vitest";
+import type { ContextMessage } from "./registry/default/ai-composer/context-message";
 import { resolveContextMessages } from "./registry/default/ai-composer/resolve-context";
 
 function message(ids = ["pricing"]) {
@@ -16,6 +19,58 @@ function message(ids = ["pricing"]) {
 }
 
 describe("AI composer reference resolution", () => {
+  it("continues a conversation after a normal SDK text stream", async () => {
+    const model = new MockLanguageModelV4({
+      doStream: async () => ({
+        stream: simulateReadableStream({
+          chunks: [
+            { type: "text-start", id: "text-1" },
+            { type: "text-delta", id: "text-1", delta: "Hello back" },
+            { type: "text-end", id: "text-1" },
+            {
+              type: "finish",
+              finishReason: { unified: "stop", raw: "stop" },
+              usage: {
+                inputTokens: {
+                  total: 1,
+                  noCache: 1,
+                  cacheRead: 0,
+                  cacheWrite: 0,
+                },
+                outputTokens: { total: 2, text: 2, reasoning: 0 },
+              },
+            },
+          ],
+          chunkDelayInMs: 0,
+        }),
+      }),
+    });
+    const resolve = vi.fn(async () => ({ name: "Pricing", content: "20" }));
+    const first = streamText({
+      model,
+      messages: await resolveContextMessages([message()], resolve),
+    });
+    let assistant: ContextMessage | undefined;
+    for await (const update of readUIMessageStream<ContextMessage>({
+      stream: first.toUIMessageStream(),
+      terminateOnError: true,
+    })) {
+      assistant = update;
+    }
+    // Exercise the SDK's real history shape, rather than hand-authoring text parts.
+    expect(assistant?.parts).toContainEqual({ type: "step-start" });
+    const messages = await resolveContextMessages(
+      [message(), assistant, { ...message(), id: "user-2" }],
+      resolve,
+    );
+    expect(messages).toContainEqual({
+      role: "assistant",
+      content: [{ type: "text", text: "Hello back" }],
+    });
+    expect(await streamText({ model, messages }).text).toBe("Hello back");
+    expect(model.doStreamCalls).toHaveLength(2);
+    expect(resolve).toHaveBeenCalledTimes(2);
+  });
   it("includes authorized contents in model messages and uses authoritative names", async () => {
     const result = await resolveContextMessages([message()], async () => ({
       name: "Pricing",

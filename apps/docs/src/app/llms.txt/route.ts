@@ -16,7 +16,7 @@ export function GET(request: Request) {
 
   const content = `# Mention
 
-> Headless React mention suggestions for native textareas and editor integrations. Requires React 19. Install @danielivanov/mention from npm; styling is optional.
+> Headless React mention suggestions for native textareas and editor integrations. Requires React 19 and Mention 0.2. Install @danielivanov/mention@^0.2.0 from npm; styling is optional.
 
 Mention owns trigger detection, suggestion search, keyboard selection, and caret positioning. Textareas store plain text. Rich editors own their documents, mention nodes, transactions, clipboard behavior, and history.
 

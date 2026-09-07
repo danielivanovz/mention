@@ -26,6 +26,8 @@ export async function resolveContextMessages(
       throw new Error("Only user and assistant messages are accepted.");
     }
     for (const part of message.parts) {
+      // Normal SDK text streams include step boundaries in assistant history.
+      if (part.type === "step-start" && message.role === "assistant") continue;
       if (part.type === "data-mentions" && message.role === "user") {
         for (const reference of part.data) ids.add(reference.id);
       } else if (part.type !== "text") {

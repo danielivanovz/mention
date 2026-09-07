@@ -33,6 +33,7 @@ This is a factual architectural distinction, not evidence of market superiority,
 ## Operating Context
 
 - The library package is `@danielivanov/mention`, requires React 19, and is licensed MIT according to `../../packages/react/package.json`.
+- Installation commands require Mention `^0.2.0`, matching the documented editor API. Publish that version before deploying its documentation; an older npm release cannot satisfy these examples.
 - This website is an existing Next.js and Fumadocs application in a Bun workspace. The redesign does not require choosing a new application framework.
 - The published entry point provides components, hooks, types, and optional CSS. The repository contains the library source and executable integration examples.
 - Developers may use plain React or a framework with server/client component boundaries. Examples that use state or render callbacks must make the applicable client boundary clear.

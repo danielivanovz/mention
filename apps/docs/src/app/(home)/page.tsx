@@ -29,7 +29,7 @@ export default function HomePage() {
       </section>
       <MentionDemo />
       <div className="start-band">
-        <CopyButton value="bun add @danielivanov/mention" />
+        <CopyButton value="bun add @danielivanov/mention@^0.2.0" />
         <Link className="foundry-button primary-button" href="/docs">
           Start building <ArrowRight aria-hidden="true" />
         </Link>

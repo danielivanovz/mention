@@ -1,5 +1,43 @@
 import { expect, test } from "@playwright/test";
 
+for (const width of [1440, 390]) {
+  test(`the popup follows identical queries when the caret moves at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 1000 });
+    await page.goto("/");
+    const input = page.getByRole("textbox", { name: "Comment", exact: true });
+    await input.evaluate((el) => {
+      el.style.fontSize = "16px";
+      el.style.lineHeight = "24px";
+    });
+    await input.fill("@a\n\n@a");
+    const popup = page.getByRole("listbox", { name: "People", exact: true });
+    await expect(popup).toBeVisible();
+    const inputBox = await input.boundingBox();
+    if (!inputBox) throw new Error("The input must be visible.");
+    // Wait until Floating UI has placed the popup below the third line.
+    await expect
+      .poll(async () => (await popup.boundingBox())?.y ?? 0)
+      .toBeGreaterThan(inputBox.y + 72);
+    const original = await popup.boundingBox();
+    if (!original) throw new Error("The popup must be positioned.");
+
+    await input.click({ position: { x: 60, y: 20 } });
+    await expect
+      .poll(() =>
+        input.evaluate((el) => (el as HTMLTextAreaElement).selectionStart),
+      )
+      .toBe(2);
+    await expect
+      .poll(async () => (await popup.boundingBox())?.y)
+      .toBeCloseTo(original.y - 48, 0);
+    await expect(input).toBeFocused();
+    await input.press("Enter");
+    await expect(input).toHaveValue("@alice\n\n@a");
+  });
+}
+
 for (const popup of ["inline", "portal"]) {
   test(`opening and navigating the ${popup} popup preserves the page scroll position`, async ({
     page,

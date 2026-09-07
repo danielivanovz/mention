@@ -20,6 +20,7 @@ export interface CoreProps {
 }
 export interface CoreReturn<T = unknown> extends MentionContext<T> {
   readonly getKey: (item: T) => string | number;
+  readonly snapshot: EditorSnapshot | null;
 }
 interface Session {
   snapshot: EditorSnapshot;
@@ -364,6 +365,7 @@ export function useMentionCore<T = unknown>(props: CoreProps): CoreReturn<T> {
     };
   }
   return {
+    snapshot: session?.snapshot ?? null,
     query: session?.query ?? "",
     open,
     highlightedIndex,
