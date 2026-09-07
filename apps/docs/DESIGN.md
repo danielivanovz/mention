@@ -175,6 +175,8 @@ Shared page edges use the fluid `page-inset` spacing token. Landing content caps
 
 The closing agent band keeps its ink background across the viewport. Its inner content shares the reference section's 100rem container, side insets, and two equal columns; the copy occupies the left column and the guide action aligns right. Both sections stack at 760px.
 
+The footer uses the same centered 100rem content width and side insets on the sheet background. Its logo aligns left and its utility links align right. At 760px and below, the logo sits above the links; both align left, and the links wrap as needed.
+
 Repeated spacing favors half-rem and whole-rem steps, with three-quarter-rem gaps for related controls. The named spacing entries describe reused values, not an exhaustive scale or a ban on optical adjustments.
 
 Large screens use neighboring content and action groups. At 1100px the editing-host area becomes a single column; at 760px the landing descriptors and reference content stack, installation spans the action row, host choices stack, and the specimen toolbar reorganizes. Below 768px, search becomes a compact icon and documentation combines Browse docs and the section list in one 48px bar. Below 600px, the header keeps the wordmark, Docs, search, and theme controls; secondary destinations remain in the landing content and footer. Documentation retains Fumadocs navigation, search and TOC primitives.

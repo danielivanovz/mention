@@ -10,4 +10,13 @@ The navy agent band retains its full-width background. A centered 100rem inner c
 - Keyboard Tab reaches the guide action with a visible 2px focus outline. Enter opens the coding-agent guide.
 - The production website build, scoped Biome checks, and `git diff --check` passed.
 
-This is local verification; the correction has not been deployed. The existing untracked `apps/docs/vercel.json` was left untouched.
+## Footer follow-up
+
+Verified the local production build with the footer correction applied to `7a0ff2e`. The footer now shares the centered 100rem content width and stacks its logo above its wrapping links at 760px and below.
+
+- At 2560px, the logo shares the agent copy's 520.5px left edge, and the footer links share the guide action's 2024.5px right edge.
+- At 390px, the logo and stacked links align at 20px. At 320px, the links wrap onto a second row without horizontal page overflow.
+- Inspected desktop light and mobile dark appearances. Keyboard Tab reaches the logo and all four links in order, each with a visible 2px focus outline.
+- The production website build, scoped Biome check, and `git diff --check` passed.
+
+This is local verification; neither layout correction has been deployed. The existing untracked `apps/docs/vercel.json` was left untouched.
